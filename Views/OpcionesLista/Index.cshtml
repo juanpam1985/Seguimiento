@@ -1,0 +1,234 @@
+﻿@model IEnumerable<Seguimiento.Models.OpcionLista>
+
+@{
+    ViewData["Title"] = "Opciones de Lista";
+}
+
+<style>
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .btn-lozano {
+        background: #f05a28;
+        border: none;
+        color: white;
+    }
+
+        .btn-lozano:hover {
+            background: #d84c1b;
+        }
+
+    .card-table {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    .table thead {
+        background: #2c3e50;
+        color: white;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+    .badge-activo {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    .badge-inactivo {
+        background: #ffebee;
+        color: #c62828;
+        padding: 5px 10px;
+        border-radius: 6px;
+    }
+
+    .acciones {
+        white-space: nowrap;
+    }
+
+    .search-box {
+        width: 300px;
+    }
+
+    .counter {
+        font-size: 14px;
+        color: #6c757d;
+    }
+
+</style>
+
+<div class="container-fluid mt-4">
+
+    <div class="page-header">
+
+        <h3>Opciones de Lista</h3>
+
+        <div class="d-flex gap-3">
+
+            <input id="buscarOpcion" type="text" class="form-control search-box" placeholder="🔍 Buscar opción...">
+
+            <a asp-action="Create" class="btn btn-lozano">
+                + Nueva Opción
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="counter mb-2">
+        Total opciones: <strong id="totalOpciones">@Model.Count()</strong>
+    </div>
+
+    <div class="card-table">
+
+        <div class="table-responsive">
+
+            <table id="tablaOpciones" class="table table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th onclick="ordenarTabla(0)">Pregunta ▲▼</th>
+                        <th onclick="ordenarTabla(1)">Valor ▲▼</th>
+                        <th onclick="ordenarTabla(2)">Orden ▲▼</th>
+                        <th onclick="ordenarTabla(3)">Estado ▲▼</th>
+                        <th style="width:200px">Acciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+
+                        <tr>
+
+                            <td>
+                                <strong>@item.Pregunta?.Nombre</strong>
+                            </td>
+
+                            <td>
+                                @item.Valor
+                            </td>
+
+                            <td>
+                                @item.Orden
+                            </td>
+
+                            <td>
+
+                                @if (item.Activo)
+                                {
+                                    <span class="badge-activo">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-inactivo">Inactivo</span>
+                                }
+
+                            </td>
+
+                            <td class="acciones">
+
+                                <div class="btn-group btn-group-sm">
+
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">
+                                        ✏ Editar
+                                    </a>
+
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">
+                                        🔎 Ver
+                                    </a>
+
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">
+                                        🗑 Eliminar
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    // BUSCADOR
+
+    document.getElementById("buscarOpcion").addEventListener("keyup", function(){
+
+    let filtro = this.value.toLowerCase();
+    let filas = document.querySelectorAll("#tablaOpciones tbody tr");
+    let total = 0;
+
+    filas.forEach(fila => {
+
+    let texto = fila.innerText.toLowerCase();
+
+    if(texto.includes(filtro)){
+    fila.style.display="";
+    total++;
+    }
+    else{
+    fila.style.display="none";
+    }
+
+    });
+
+    document.getElementById("totalOpciones").innerText = total;
+
+    });
+
+
+    // ORDENAR COLUMNAS
+
+    function ordenarTabla(columna){
+
+    let tabla = document.getElementById("tablaOpciones");
+    let filas = Array.from(tabla.rows).slice(1);
+
+    let asc = tabla.classList.toggle("asc");
+
+    filas.sort((a,b)=>{
+
+    let A = a.cells[columna].innerText;
+    let B = b.cells[columna].innerText;
+
+    return asc ? A.localeCompare(B) : B.localeCompare(A);
+
+    });
+
+    filas.forEach(f=>tabla.appendChild(f));
+
+    }
+
+</script>

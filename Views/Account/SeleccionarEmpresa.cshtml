@@ -1,0 +1,136 @@
+﻿@model List<Seguimiento.Models.Empresa>
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Seleccionar Empresa</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <style>
+
+        body {
+            height: 100vh;
+            background-image: url('/images/fondo.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: Segoe UI;
+        }
+
+        .overlay {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.35);
+        }
+
+        .card-container {
+            width: 420px;
+            background: white;
+            border-radius: 10px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+            .logo img {
+                width: 220px;
+            }
+
+        .title {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+
+        .btn-ingresar {
+            background: #f05a28;
+            border: none;
+        }
+
+            .btn-ingresar:hover {
+                background: #d84c1b;
+            }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="overlay"></div>
+
+    <div class="card-container">
+
+        <div class="logo">
+            <img src="~/images/logo-lozano.png" />
+        </div>
+
+        <div class="title">
+            Seleccione la empresa con la que desea trabajar
+        </div>
+
+        <form asp-action="SeleccionarEmpresa" method="post">
+
+            <div class="mb-3">
+
+                <label class="form-label">Empresa</label>
+
+                <select name="empresaId" class="form-control" required>
+
+                    <option value="">Seleccione una empresa</option>
+
+                    @foreach (var empresa in Model)
+                    {
+                        <option value="@empresa.Id">@empresa.Nombre</option>
+                    }
+
+                </select>
+
+            </div>
+
+            <div class="d-grid">
+
+                <button class="btn btn-ingresar text-white">
+                    Ingresar
+                </button>
+
+            </div>
+
+        </form>
+
+        <div class="footer">
+            Lozano Asesores © 2026
+        </div>
+
+    </div>
+
+</body>
+
+</html>

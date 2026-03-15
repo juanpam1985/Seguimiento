@@ -1,0 +1,274 @@
+﻿@model IEnumerable<Seguimiento.Models.Empresa>
+
+@{
+    ViewData["Title"] = "Empresas";
+}
+
+<style>
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .btn-lozano {
+        background: #f05a28;
+        border: none;
+        color: white;
+        font-weight: 500;
+    }
+
+        .btn-lozano:hover {
+            background: #d84c1b;
+            color: white;
+        }
+
+    .card-table {
+        background: white;
+        border-radius: 10px;
+        padding: 25px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    .table thead {
+        background: #2c3e50;
+        color: white;
+        cursor: pointer;
+    }
+
+    .table td {
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover {
+        background: #f4f6f9;
+    }
+
+    .badge-activo {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .badge-inactivo {
+        background: #ffebee;
+        color: #c62828;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+
+    .acciones {
+        white-space: nowrap;
+    }
+
+    .search-box {
+        width: 280px;
+    }
+
+    .counter {
+        font-size: 14px;
+        color: #6c757d;
+        margin-bottom: 10px;
+    }
+
+    .table-title {
+        font-weight: 600;
+        font-size: 20px;
+    }
+
+</style>
+
+<div class="container-fluid mt-4">
+
+    <div class="page-header">
+
+        <div class="table-title">
+            🏢 Empresas del Sistema
+        </div>
+
+        <div class="d-flex gap-3">
+
+            <input id="buscarEmpresa"
+                   type="text"
+                   class="form-control search-box"
+                   placeholder="Buscar empresa...">
+
+            <a asp-action="Create" class="btn btn-lozano">
+                ➕ Nueva Empresa
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="counter">
+        Total empresas: <strong id="totalRegistros">@Model.Count()</strong>
+    </div>
+
+    <div class="card-table">
+
+        <div class="table-responsive">
+
+            <table id="tablaEmpresas" class="table table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th onclick="ordenarTabla(0)">Empresa</th>
+                        <th onclick="ordenarTabla(1)">Estado</th>
+                        <th style="width:200px">Acciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var item in Model)
+                    {
+
+                        <tr>
+
+                            <td>
+                                <strong>@item.Nombre</strong>
+                            </td>
+
+                            <td>
+
+                                @if (item.Activo)
+                                {
+                                    <span class="badge-activo">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-inactivo">Inactivo</span>
+                                }
+
+                            </td>
+
+                            <td class="acciones">
+
+                                <div class="btn-group btn-group-sm">
+
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">
+                                        ✏ Editar
+                                    </a>
+
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">
+                                        🔍 Ver
+                                    </a>
+
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">
+                                        🗑 Eliminar
+                                    </a>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    const searchInput = document.getElementById("buscarEmpresa");
+    const table = document.getElementById("tablaEmpresas");
+    const rows = table.querySelectorAll("tbody tr");
+
+    searchInput.addEventListener("keyup", function(){
+
+    let filtro = this.value.toLowerCase();
+    let total = 0;
+
+    rows.forEach(row => {
+
+    let texto = row.innerText.toLowerCase();
+
+    if(texto.includes(filtro)){
+    row.style.display="";
+    total++;
+    }
+    else{
+    row.style.display="none";
+    }
+
+    });
+
+    document.getElementById("totalRegistros").innerText = total;
+
+    });
+
+
+    function ordenarTabla(col){
+
+    let switching = true;
+    let dir = "asc";
+    let rows, i, x, y, shouldSwitch;
+    let table = document.getElementById("tablaEmpresas");
+
+    while (switching) {
+
+    switching = false;
+    rows = table.rows;
+
+    for (i = 1; i < (rows.length - 1); i++) {
+
+    shouldSwitch = false;
+
+    x = rows[i].getElementsByTagName("TD")[col];
+    y = rows[i + 1].getElementsByTagName("TD")[col];
+
+    if (dir == "asc") {
+
+    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+    shouldSwitch= true;
+    break;
+    }
+
+    } else if (dir == "desc") {
+
+    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+    shouldSwitch = true;
+    break;
+    }
+
+    }
+
+    }
+
+    if (shouldSwitch) {
+
+    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+    switching = true;
+
+    } else {
+
+    if (dir == "asc") {
+    dir = "desc";
+    switching = true;
+    }
+
+    }
+
+    }
+
+    }
+
+</script>

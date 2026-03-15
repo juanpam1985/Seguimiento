@@ -15,8 +15,14 @@ namespace Seguimiento.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            if (HttpContext.Session.GetInt32("UsuarioId") == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            return RedirectToAction("Dashboard", "Embarques");
         }
+
 
         public IActionResult Privacy()
         {

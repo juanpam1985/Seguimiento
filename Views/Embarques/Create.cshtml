@@ -1,0 +1,203 @@
+﻿@model Seguimiento.Models.Embarque
+
+@{
+    ViewData["Title"] = "Nuevo Embarque";
+}
+
+<div class="container-fluid">
+
+    <h2 class="mb-3">Nuevo Embarque</h2>
+
+    <form asp-action="Create" method="post">
+
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-sm align-middle">
+
+                <thead class="table-dark">
+
+                    <tr>
+
+                        <th>Status</th>
+                        <th>Brand</th>
+                        <th>Shipment</th>
+                        <th>Destination Port</th>
+                        <th>Incoterm</th>
+                        <th>Shipping Company</th>
+                        <th>Qty</th>
+
+                        <th>Polo Track</th>
+                        <th>Polo PA</th>
+                        <th>Virtus PA</th>
+                        <th>TERA</th>
+                        <th>SAVEIRO</th>
+                        <th>T-Cross PA</th>
+
+                        <th>EMZOOM</th>
+                        <th>GS4 MAX</th>
+                        <th>GS8 HV</th>
+                        <th>S7 HV</th>
+
+                        <th>AION UT</th>
+                        <th>AION ES</th>
+                        <th>AION Y</th>
+                        <th>AION V</th>
+
+                        <th>RBB 4X2</th>
+                        <th>RBB 4X4</th>
+                        <th>RBC 4X4</th>
+                        <th>RBC TA</th>
+                        <th>RBD PLUS</th>
+                        <th>MU-X</th>
+
+                        <th>GEOME</th>
+                        <th>EX2</th>
+                        <th>EX5</th>
+                        <th>STARRAY</th>
+
+                        <th>Departure</th>
+                        <th>ETA</th>
+                        <th>Tránsito</th>
+                        <th>Homologation</th>
+                        <th>Certificado INEN</th>
+                        <th>AFIP</th>
+
+                        <th>Invoice Copy</th>
+                        <th>BL Copy</th>
+                        <th>BL</th>
+                        <th>CO Copy</th>
+
+                        <th>Seguro</th>
+                        <th>Licencia INEN</th>
+                        <th>Packing</th>
+                        <th>Subcategorías</th>
+
+                        <th>Notificación SRI</th>
+                        <th>Destino Aduanero</th>
+                        <th>Tipo Pago</th>
+                        <th>Días Libres</th>
+
+                        <th>MRN</th>
+                        <th>Pre-liquidación</th>
+                        <th>Emisión BL</th>
+                        <th>CAS</th>
+                        <th>Pago Flete</th>
+
+                        <th>CO Original</th>
+                        <th>BL Original</th>
+                        <th>Invoice Original</th>
+
+                        <th>Estado Buque</th>
+                        <th>Nombre Buque</th>
+                        <th>Tracking</th>
+                        <th>Observaciones</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    <tr>
+
+                        <td>
+                            <select asp-for="Estado" class="form-control">
+                                <option>OPEN</option>
+                                <option>IN TRANSIT</option>
+                                <option>ARRIVED</option>
+                            </select>
+                        </td>
+
+                        <td>
+                            <select asp-for="Brand" class="form-control">
+                                <option>VW</option>
+                                <option>GAC HIBRIDOS</option>
+                                <option>GAC ELECTRICOS</option>
+                                <option>ISUZU</option>
+                                <option>GEELY</option>
+                            </select>
+                        </td>
+
+                        <td><input asp-for="Shipment" class="form-control" /></td>
+                        <td><input asp-for="DestinationPort" class="form-control" /></td>
+                        <td><input asp-for="Incoterm" class="form-control" /></td>
+                        <td><input asp-for="ShippingCompany" class="form-control" /></td>
+                        <td><input asp-for="Qty" class="form-control" /></td>
+
+                        <td><input name="PoloTrack" class="form-control" /></td>
+                        <td><input name="PoloPA" class="form-control" /></td>
+                        <td><input name="VirtusPA" class="form-control" /></td>
+                        <td><input name="TERA" class="form-control" /></td>
+                        <td><input name="SAVEIRO" class="form-control" /></td>
+                        <td><input name="TCross" class="form-control" /></td>
+
+                        <td><input name="EMZOOM" class="form-control" /></td>
+                        <td><input name="GS4MAX" class="form-control" /></td>
+                        <td><input name="GS8HV" class="form-control" /></td>
+                        <td><input name="S7HV" class="form-control" /></td>
+
+                        <td><input name="AIONUT" class="form-control" /></td>
+                        <td><input name="AIONES" class="form-control" /></td>
+                        <td><input name="AIONY" class="form-control" /></td>
+                        <td><input name="AIONV" class="form-control" /></td>
+
+                        <td><input name="RBB4X2" class="form-control" /></td>
+                        <td><input name="RBB4X4" class="form-control" /></td>
+                        <td><input name="RBC4X4" class="form-control" /></td>
+                        <td><input name="RBCTA" class="form-control" /></td>
+                        <td><input name="RBDPLUS" class="form-control" /></td>
+                        <td><input name="MUX" class="form-control" /></td>
+
+                        <td><input name="GEOME" class="form-control" /></td>
+                        <td><input name="EX2" class="form-control" /></td>
+                        <td><input name="EX5" class="form-control" /></td>
+                        <td><input name="STARRAY" class="form-control" /></td>
+
+                        <td><input asp-for="DepartureDate" type="date" class="form-control" /></td>
+                        <td><input asp-for="ETA" type="date" class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+                        <td><input class="form-control" /></td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <br>
+
+        <button class="btn btn-success">Guardar Embarque</button>
+
+    </form>
+
+</div>

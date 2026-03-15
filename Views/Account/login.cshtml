@@ -1,0 +1,132 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Login - Sistema Seguimiento Embarques</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <style>
+
+        body {
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* IMAGEN DE FONDO */
+            background-image: url('/images/fondo.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+            /* capa oscura para que el login resalte */
+            body::before {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.35);
+            }
+
+        .login-container {
+            width: 420px;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+            .logo img {
+                max-width: 220px;
+            }
+
+        .system-title {
+            text-align: center;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #333;
+        }
+
+        .btn-login {
+            background: #f05a28;
+            border: none;
+            font-weight: 500;
+        }
+
+            .btn-login:hover {
+                background: #d84c1b;
+            }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+            margin-top: 20px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="login-container">
+
+        <div class="logo">
+            <img src="~/images/logo-lozano.png" />
+        </div>
+
+        <div class="system-title">
+            Sistema de Seguimiento de Embarques
+        </div>
+
+        <form asp-controller="Account" asp-action="Login" method="post">
+
+            @Html.AntiForgeryToken()
+
+            <div class="mb-3">
+                <label>Usuario</label>
+                <input name="usuario" class="form-control" placeholder="Ingrese su usuario" required />
+            </div>
+
+            <div class="mb-3">
+                <label>Contraseña</label>
+                <input type="password" name="password" class="form-control" placeholder="Ingrese su contraseña" required />
+            </div>
+
+            <div class="d-grid">
+                <button type="submit" class="btn btn-login text-white">
+                    Ingresar al sistema
+                </button>
+            </div>
+
+        </form>
+
+        <div class="footer">
+            Lozano Asesores © 2026
+        </div>
+
+    </div>
+
+</body>
+</html>
