@@ -19,11 +19,17 @@ namespace Seguimiento.Controllers
         }
 
         // ===============================
-        // LISTA DE USUARIOS
+        // INDEX
         // ===============================
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Usuarios.ToListAsync());
+            var usuarios = await _context.Usuarios
+                .Include(u => u.Rol)
+                .Include(u => u.UsuarioEmpresas)
+                    .ThenInclude(ue => ue.Empresa)
+                .ToListAsync();
+
+            return View(usuarios);
         }
 
         // ===============================
@@ -31,14 +37,15 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
             var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                .Include(u => u.UsuarioEmpresas)
+                    .ThenInclude(ue => ue.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (usuario == null)
-                return NotFound();
+            if (usuario == null) return NotFound();
 
             return View(usuario);
         }
@@ -48,9 +55,8 @@ namespace Seguimiento.Controllers
         // ===============================
         public IActionResult Create()
         {
-            ViewBag.Empresas = _context.Empresas
-                .Where(x => x.Activo)
-                .ToList();
+            ViewBag.Empresas = _context.Empresas.ToList();
+            ViewBag.Roles = _context.Roles.ToList();
 
             return View();
         }
@@ -64,6 +70,13 @@ namespace Seguimiento.Controllers
         {
             ModelState.Remove("FechaCreacion");
             ModelState.Remove("UsuarioEmpresas");
+            ModelState.Remove("Rol"); // 🔥 CLAVE
+
+            if (usuario.RolId == 0)
+                ModelState.AddModelError("RolId", "Debe seleccionar un rol");
+
+            if (string.IsNullOrEmpty(usuario.PasswordHash))
+                ModelState.AddModelError("PasswordHash", "La contraseña es obligatoria");
 
             if (ModelState.IsValid)
             {
@@ -72,17 +85,19 @@ namespace Seguimiento.Controllers
                 _context.Usuarios.Add(usuario);
                 await _context.SaveChangesAsync();
 
-                if (empresasSeleccionadas != null)
+                var empresasValidas = empresasSeleccionadas?
+                    .Where(x => x != 0)
+                    .ToList();
+
+                if (empresasValidas != null && empresasValidas.Any())
                 {
-                    foreach (var empresaId in empresasSeleccionadas)
+                    foreach (var empresaId in empresasValidas)
                     {
-                        var relacion = new UsuarioEmpresa
+                        _context.UsuarioEmpresas.Add(new UsuarioEmpresa
                         {
                             UsuarioId = usuario.Id,
                             EmpresaId = empresaId
-                        };
-
-                        _context.UsuarioEmpresas.Add(relacion);
+                        });
                     }
 
                     await _context.SaveChangesAsync();
@@ -91,9 +106,8 @@ namespace Seguimiento.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Empresas = _context.Empresas
-                .Where(x => x.Activo)
-                .ToList();
+            ViewBag.Empresas = _context.Empresas.ToList();
+            ViewBag.Roles = _context.Roles.ToList();
 
             return View(usuario);
         }
@@ -103,13 +117,21 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
-            var usuario = await _context.Usuarios.FindAsync(id);
+            var usuario = await _context.Usuarios
+                .Include(u => u.UsuarioEmpresas)
+                .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (usuario == null)
-                return NotFound();
+            if (usuario == null) return NotFound();
+
+            ViewBag.Empresas = _context.Empresas.ToList();
+
+            ViewBag.EmpresasSeleccionadas = usuario.UsuarioEmpresas
+                .Select(x => x.EmpresaId)
+                .ToList();
+
+            ViewBag.Roles = _context.Roles.ToList();
 
             return View(usuario);
         }
@@ -121,28 +143,53 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Usuario usuario)
         {
-            if (id != usuario.Id)
-                return NotFound();
+            if (id != usuario.Id) return NotFound();
 
-            if (ModelState.IsValid)
+            ModelState.Remove("UsuarioEmpresas");
+            ModelState.Remove("FechaCreacion");
+            ModelState.Remove("Rol"); // 🔥 CLAVE
+
+            var empresasSeleccionadas = Request.Form["empresasSeleccionadas"]
+                .Where(x => !string.IsNullOrEmpty(x) && x != "0")
+                .Select(x => int.Parse(x))
+                .ToList();
+
+            var usuarioDb = await _context.Usuarios
+                .Include(u => u.UsuarioEmpresas)
+                .FirstOrDefaultAsync(u => u.Id == id);
+
+            if (usuarioDb == null) return NotFound();
+
+            usuarioDb.Nombre = usuario.Nombre;
+            usuarioDb.UsuarioLogin = usuario.UsuarioLogin;
+            usuarioDb.Email = usuario.Email;
+            usuarioDb.Activo = usuario.Activo;
+            usuarioDb.RolId = usuario.RolId;
+
+            var nuevaPassword = Request.Form["NuevaPassword"].ToString();
+            if (!string.IsNullOrEmpty(nuevaPassword))
             {
-                try
-                {
-                    _context.Update(usuario);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!UsuarioExists(usuario.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
-
-                return RedirectToAction(nameof(Index));
+                usuarioDb.PasswordHash = nuevaPassword;
             }
 
-            return View(usuario);
+            _context.UsuarioEmpresas.RemoveRange(usuarioDb.UsuarioEmpresas);
+            await _context.SaveChangesAsync();
+
+            if (empresasSeleccionadas.Any())
+            {
+                foreach (var empresaId in empresasSeleccionadas)
+                {
+                    _context.UsuarioEmpresas.Add(new UsuarioEmpresa
+                    {
+                        UsuarioId = id,
+                        EmpresaId = empresaId
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // ===============================
@@ -150,14 +197,15 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-                return NotFound();
+            if (id == null) return NotFound();
 
             var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                .Include(u => u.UsuarioEmpresas)
+                    .ThenInclude(ue => ue.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (usuario == null)
-                return NotFound();
+            if (usuario == null) return NotFound();
 
             return View(usuario);
         }
@@ -173,17 +221,17 @@ namespace Seguimiento.Controllers
 
             if (usuario != null)
             {
+                var relaciones = _context.UsuarioEmpresas
+                    .Where(x => x.UsuarioId == id);
+
+                _context.UsuarioEmpresas.RemoveRange(relaciones);
                 _context.Usuarios.Remove(usuario);
             }
 
             await _context.SaveChangesAsync();
-
             return RedirectToAction(nameof(Index));
         }
 
-        // ===============================
-        // EXISTE USUARIO
-        // ===============================
         private bool UsuarioExists(int id)
         {
             return _context.Usuarios.Any(e => e.Id == id);

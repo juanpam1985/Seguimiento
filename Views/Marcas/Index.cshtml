@@ -4,152 +4,101 @@
     ViewData["Title"] = "Marcas";
 }
 
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-    }
-
-    .btn-lozano {
-        background: #f05a28;
-        border: none;
-        color: white;
-    }
-
-        .btn-lozano:hover {
-            background: #d84c1b;
-        }
-
-    .card-table {
-        background: white;
-        border-radius: 10px;
-        padding: 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    }
-
-    .table thead {
-        background: #2c3e50;
-        color: white;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: #f8f9fa;
-    }
-
-    .badge-activo {
-        background: #e8f5e9;
-        color: #2e7d32;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
-
-    .badge-inactivo {
-        background: #ffebee;
-        color: #c62828;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
-
-    .acciones {
-        white-space: nowrap;
-    }
-
-    .search-box {
-        width: 300px;
-    }
-
-    .counter {
-        font-size: 14px;
-        color: #6c757d;
-    }
-
-</style>
-
 <div class="container-fluid mt-4">
 
-    <div class="page-header">
+    <div class="page-header d-flex justify-content-between align-items-center mb-3">
 
-        <h3>Marcas del Sistema</h3>
+        <div>
+            <h3>📦 Marcas del Sistema</h3>
+            <small class="text-muted">Gestión de marcas registradas</small>
+        </div>
 
-        <div class="d-flex gap-3">
+        <div class="d-flex gap-2">
+            <input id="buscarMarca" type="text" class="form-control" placeholder="🔍 Buscar...">
 
-            <input id="buscarMarca" type="text" class="form-control search-box" placeholder="🔍 Buscar marca...">
-
-            <a asp-action="Create" class="btn btn-lozano">
+            <a asp-action="Create" class="btn btn-warning">
                 + Nueva Marca
             </a>
-
         </div>
 
     </div>
 
-    <div class="counter mb-2">
-        Total marcas: <strong id="totalMarcas">@Model.Count()</strong>
+    <div class="mb-2">
+        Mostrando <strong id="totalMarcas">@Model.Count()</strong> registros
     </div>
 
-    <div class="card-table">
+    <div class="card shadow">
 
         <div class="table-responsive">
 
             <table id="tablaMarcas" class="table table-hover">
 
-                <thead>
-
+                <thead class="table-dark">
                     <tr>
-
-                        <th onclick="ordenarTabla(0)">Marca ▲▼</th>
-                        <th onclick="ordenarTabla(1)">Estado ▲▼</th>
+                        <th>Marca</th>
+                        <th>Empresas</th>
+                        <th>Estado</th>
                         <th style="width:200px">Acciones</th>
-
                     </tr>
-
                 </thead>
 
                 <tbody>
 
                     @foreach (var item in Model)
                     {
-
                         <tr>
 
+                            <!-- MARCA -->
                             <td>
                                 <strong>@item.Nombre</strong>
                             </td>
 
+                            <!-- EMPRESAS (MUCHOS A MUCHOS) -->
                             <td>
 
-                                @if (item.Activo)
+                                @if (item.MarcaEmpresas != null && item.MarcaEmpresas.Any())
                                 {
-                                    <span class="badge-activo">Activo</span>
+                                    foreach (var me in item.MarcaEmpresas)
+                                    {
+                                        <span class="badge bg-secondary me-1">
+                                            @me.Empresa.Nombre
+                                        </span>
+                                    }
                                 }
                                 else
                                 {
-                                    <span class="badge-inactivo">Inactivo</span>
+                                    <span class="text-muted">Sin empresas</span>
                                 }
 
                             </td>
 
-                            <td class="acciones">
+                            <!-- ESTADO -->
+                            <td>
+                                @if (item.Activo)
+                                {
+                                    <span class="badge bg-success">Activo</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactivo</span>
+                                }
+                            </td>
+
+                            <!-- ACCIONES -->
+                            <td>
 
                                 <div class="btn-group btn-group-sm">
 
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">
-                                        ✏ Editar
+                                        ✏
                                     </a>
 
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">
-                                        🔎 Ver
+                                        👁
                                     </a>
 
                                     <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">
-                                        🗑 Eliminar
+                                        🗑
                                     </a>
 
                                 </div>
@@ -157,7 +106,6 @@
                             </td>
 
                         </tr>
-
                     }
 
                 </tbody>
@@ -172,53 +120,27 @@
 
 <script>
 
-    // BUSCADOR
+    document.getElementById("buscarMarca").addEventListener("keyup", function () {
 
-    document.getElementById("buscarMarca").addEventListener("keyup", function(){
+        let filtro = this.value.toLowerCase();
+        let filas = document.querySelectorAll("#tablaMarcas tbody tr");
+        let total = 0;
 
-    let filtro = this.value.toLowerCase();
-    let filas = document.querySelectorAll("#tablaMarcas tbody tr");
-    let total = 0;
+        filas.forEach(fila => {
 
-    filas.forEach(fila => {
+            let texto = fila.innerText.toLowerCase();
 
-    let texto = fila.innerText.toLowerCase();
+            if (texto.includes(filtro)) {
+                fila.style.display = "";
+                total++;
+            } else {
+                fila.style.display = "none";
+            }
 
-    if(texto.includes(filtro)){
-    fila.style.display="";
-    total++;
-    }
-    else{
-    fila.style.display="none";
-    }
+        });
 
-    });
-
-    document.getElementById("totalMarcas").innerText = total;
+        document.getElementById("totalMarcas").innerText = total;
 
     });
-
-
-    // ORDENAR COLUMNAS
-
-    function ordenarTabla(columna){
-
-    let tabla = document.getElementById("tablaMarcas");
-    let filas = Array.from(tabla.rows).slice(1);
-
-    let asc = tabla.classList.toggle("asc");
-
-    filas.sort((a,b)=>{
-
-    let A = a.cells[columna].innerText;
-    let B = b.cells[columna].innerText;
-
-    return asc ? A.localeCompare(B) : B.localeCompare(A);
-
-    });
-
-    filas.forEach(f=>tabla.appendChild(f));
-
-    }
 
 </script>

@@ -1,84 +1,332 @@
 ﻿@model Seguimiento.Models.Embarque
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle Embarque";
+
+    var respuestas = Model.Respuestas?
+        .Where(r => r.Pregunta != null)
+        .OrderBy(r => r.Pregunta.Orden)
+        .ToList() ?? new List<Seguimiento.Models.Respuesta>();
+
+    string GetValor(string nombre)
+    {
+        return respuestas.FirstOrDefault(r =>
+            r.Pregunta.Nombre.ToUpper().Contains(nombre.ToUpper())
+        )?.Valor ?? "";
+    }
+
+    DateTime? GetFecha(string nombre)
+    {
+        var val = GetValor(nombre);
+        return DateTime.TryParse(val, out DateTime d) ? d : (DateTime?)null;
+    }
+
+    var departure = GetFecha("DEPARTURE");
+    var eta = GetFecha("ETA");
+
+    string estado = "EN TRÁNSITO";
+    string claseEstado = "transit";
+
+    if (eta.HasValue && eta < DateTime.Now)
+    {
+        estado = "RETRASADO";
+        claseEstado = "delay";
+    }
+    else if (departure.HasValue && departure > DateTime.Now)
+    {
+        estado = "PROGRAMADO";
+        claseEstado = "bg-primary";
+    }
+
+    var resumen = Model.EmbarqueModelos
+        .Where(x => x.Modelo?.TipoModelo != null)
+        .GroupBy(x => x.Modelo.TipoModelo.Nombre)
+        .Select(g => new
+        {
+            Tipo = g.Key,
+            Modelos = g.GroupBy(m => m.Modelo.Nombre)
+                       .Select(m => new
+                       {
+                           Nombre = m.Key,
+                           Total = m.Sum(x => x.Cantidad)
+                       }).ToList(),
+            TotalTipo = g.Sum(x => x.Cantidad)
+        }).ToList();
+
+    var totalGeneral = Model.EmbarqueModelos.Sum(x => x.Cantidad);
+
+    // 🔥 CONTADOR DE PENDIENTES
+    var listaPreguntas = ViewBag.Preguntas as List<Seguimiento.Models.Pregunta> ?? new();
+    var pendientes = listaPreguntas.Count(p =>
+         {
+     var resp = respuestas.FirstOrDefault(r => r.PreguntaId == p.Id);
+     var valor = resp?.Valor ?? "";
+
+     return string.IsNullOrEmpty(valor) || valor.ToUpper() == "PENDIENTE";
+         });
+
 }
 
-<h1>Details</h1>
+<style>
+    body {
+        background: #f4f6fb;
+    }
 
-<div>
-    <h4>Embarque</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EmpresaId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EmpresaId)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Shipment)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Shipment)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Brand)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Brand)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DestinationPort)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DestinationPort)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Incoterm)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Incoterm)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ShippingCompany)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ShippingCompany)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Qty)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Qty)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.DepartureDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.DepartureDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ETA)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ETA)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Estado)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Estado)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaRegistro)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaRegistro)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    .card-main {
+        background: white;
+        border-radius: 14px;
+        padding: 25px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        margin-bottom: 15px;
+    }
+
+    .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .titulo {
+        font-weight: 700;
+        font-size: 20px;
+    }
+
+    .badge-estado {
+        padding: 6px 14px;
+        border-radius: 20px;
+        color: white;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .delay {
+        background: #dc2626;
+    }
+
+    .transit {
+        background: #f59e0b;
+    }
+
+    .box {
+        background: #f9fafb;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
+
+    .label {
+        font-size: 12px;
+        color: #6b7280;
+    }
+
+    .valor {
+        font-weight: 600;
+        font-size: 15px;
+    }
+
+    .section-title {
+        font-weight: 600;
+        margin: 20px 0 10px 0;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 12px;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+        .info-row:nth-child(even) {
+            background: #f9fafb;
+        }
+
+    .info-label {
+        width: 40%;
+        font-size: 13px;
+        color: #6b7280;
+    }
+
+    .info-value {
+        width: 60%;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* 🔥 NUEVO: PENDIENTE SUAVE */
+    .pendiente {
+        background: #f8d7da;
+        color: #842029;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .tipo-header {
+        background: #111827;
+        color: white;
+        padding: 10px;
+        border-radius: 6px;
+        font-weight: 600;
+        margin-top: 20px;
+    }
+
+    .subtotal {
+        background: #f3f4f6;
+        font-weight: bold;
+    }
+
+    .total-general {
+        background: #111827;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    /* 🔥 ALERTAS MEJORADAS */
+    .alerta {
+        background: #fff3cd;
+        color: #664d03;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .alerta-roja {
+        background: #f8d7da;
+        color: #842029;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="card-main">
+        <div class="header">
+            <div>
+                <div class="titulo">📦 Detalle del Embarque</div>
+                <small>Empresa: <strong>@Model.Empresa?.Nombre</strong></small>
+            </div>
+
+            <span class="badge-estado @claseEstado">@estado</span>
+        </div>
+    </div>
+
+    <!-- 🔥 ALERTA DE PENDIENTES -->
+    @if (pendientes > 0)
+    {
+        <div class="alerta alerta-roja">
+            ⚠ Hay <strong>@pendientes</strong> campos pendientes
+        </div>
+    }
+
+    <!-- ALERTA ETA -->
+    @if (eta.HasValue && (eta.Value - DateTime.Now).TotalDays <= 3)
+    {
+        <div class="alerta">
+            ⚠ ETA próxima - revisar documentación
+        </div>
+    }
+
+    <!-- INFO PRINCIPAL -->
+    <div class="card-main">
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="label">Fecha Registro</div>
+                    <div class="valor">@Model.FechaRegistro.ToString("dd/MM/yyyy")</div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="label">Shipment</div>
+                    <div class="valor">@GetValor("SHIPMENT")</div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="box">
+                    <div class="label">Destino</div>
+                    <div class="valor">@GetValor("DESTINATION")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INFO DINÁMICA -->
+        <div class="section-title">📋 Información completa</div>
+
+        @{
+            var preguntas = ViewBag.Preguntas as List<Seguimiento.Models.Pregunta> ?? new();
+        }
+
+        @foreach (var p in preguntas)
+        {
+            var resp = respuestas.FirstOrDefault(r => r.PreguntaId == p.Id);
+            var valor = resp?.Valor ?? "";
+
+            bool esPendiente = string.IsNullOrEmpty(valor) || valor.ToUpper() == "PENDIENTE";
+
+            <div class="info-row">
+                <div class="info-label">@p.Nombre</div>
+                <div class="info-value">
+                    @if (esPendiente)
+                    {
+                        <span class="pendiente">⚠ PENDIENTE</span>
+                    }
+                    else
+                    {
+                        @valor
+                    }
+                </div>
+            </div>
+        }
+        <!-- MODELOS -->
+        <div class="section-title">🚗 Modelos por Tipo</div>
+
+        @foreach (var tipo in resumen)
+        {
+            <div class="tipo-header">@tipo.Tipo.ToUpper()</div>
+
+            <table class="table table-sm table-bordered mt-2">
+                <thead>
+                    <tr>
+                        <th>Modelo</th>
+                        <th style="width:150px;">Cantidad</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var m in tipo.Modelos)
+                    {
+                        <tr>
+                            <td>@m.Nombre</td>
+                            <td><strong>@m.Total</strong></td>
+                        </tr>
+                    }
+
+                    <tr class="subtotal">
+                        <td>TOTAL @tipo.Tipo</td>
+                        <td>@tipo.TotalTipo</td>
+                    </tr>
+                </tbody>
+            </table>
+        }
+
+        <div class="total-general">
+            TOTAL GENERAL: <strong>@totalGeneral</strong>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="mt-4 d-flex gap-2">
+            <a asp-action="Dashboard" class="btn btn-secondary">⬅ Volver</a>
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">✏ Editar</a>
+        </div>
+
+    </div>
+
 </div>

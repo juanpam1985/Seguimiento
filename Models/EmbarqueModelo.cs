@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace Seguimiento.Models
+﻿namespace Seguimiento.Models
 {
     public class EmbarqueModelo
     {
@@ -8,8 +6,12 @@ namespace Seguimiento.Models
 
         public int EmbarqueId { get; set; }
 
-        public int ModeloVehiculoId { get; set; }
-
+        public int ModeloId { get; set; }
+        // 🔥 ESTA LÍNEA ES LA CLAVE
+        public Modelo Modelo { get; set; }
         public int Cantidad { get; set; }
+      
+
+
     }
 }

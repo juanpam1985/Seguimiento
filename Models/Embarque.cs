@@ -1,5 +1,4 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace Seguimiento.Models
 {
@@ -9,26 +8,25 @@ namespace Seguimiento.Models
 
         public int EmpresaId { get; set; }
 
-        public string Status { get; set; }
+        public DateTime FechaRegistro { get; set; }
 
-        public string Brand { get; set; }
+        // =========================
+        // 🔥 AUDITORÍA (NUEVO)
+        // =========================
+        public string? CreadoPor { get; set; }
+        public DateTime? FechaCreacion { get; set; }
 
-        public string Shipment { get; set; }
+        public string? ModificadoPor { get; set; }
+        public DateTime? FechaModificacion { get; set; }
 
-        public string DestinationPort { get; set; }
+        // =========================
+        // RELACIONES (si ya las tienes, déjalas)
+        // =========================
+        public Empresa? Empresa { get; set; }
 
-        public string Incoterm { get; set; }
-
-        public string ShippingCompany { get; set; }
-
-        public int Qty { get; set; }
-
-        public DateTime? DepartureDate { get; set; }
-
-        public DateTime? ETA { get; set; }
-
-        public string Estado { get; set; }
-
-        public DateTime FechaRegistro { get; set; } = DateTime.Now;
+        public ICollection<EmbarqueModelo>? EmbarqueModelos { get; set; }
+        public ICollection<Respuesta>? Respuestas { get; set; }
+        public bool? DepartureConfirmado { get; set; } = false;
+        public bool? EtaConfirmado { get; set; } = false;
     }
 }

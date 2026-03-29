@@ -1,203 +1,671 @@
 ﻿@model Seguimiento.Models.Embarque
 
 @{
-    ViewData["Title"] = "Nuevo Embarque";
+    bool esEdicion = Model != null && Model.Id > 0;
+
+    ViewData["Title"] = esEdicion ? "Editar Embarque" : "Nuevo Embarque";
+
+    var preguntas = (ViewBag.Preguntas as List<Seguimiento.Models.Pregunta> ?? new List<Seguimiento.Models.Pregunta>())
+                    .OrderBy(p => p.Orden)
+                    .ToList();
+
+    var opciones = ViewBag.Opciones as List<Seguimiento.Models.OpcionLista> ?? new List<Seguimiento.Models.OpcionLista>();
+    var marcas = ViewBag.Marcas as List<SelectListItem> ?? new List<SelectListItem>();
+
+    var respuestas = ViewBag.Respuestas as List<Seguimiento.Models.Respuesta> ?? new List<Seguimiento.Models.Respuesta>();
+    var modelosSeleccionados = ViewBag.ModelosSeleccionados as List<Seguimiento.Models.EmbarqueModelo> ?? new List<Seguimiento.Models.EmbarqueModelo>();
+
+    var modelosJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ModelosJson);
+
+    string GetValor(int preguntaId)
+    {
+        return respuestas.FirstOrDefault(r => r.PreguntaId == preguntaId)?.Valor ?? "";
+    }
+
+    int GetCantidadModelo(int modeloId)
+    {
+        return modelosSeleccionados.FirstOrDefault(m => m.ModeloId == modeloId)?.Cantidad ?? 0;
+    }
+
+    var indexQty = preguntas.FindIndex(p => p.Nombre.Trim().ToUpper() == "QTY");
+
+    var indicesFecha = new List<int> { 7, 8, 13, 14, 17, 18, 19, 25, 26, 28, 29, 30, 31, 32 };
 }
 
-<div class="container-fluid">
+<style>
+    /* ❗ ICONO DE CAMPO FALTANTE */
+    .campo-alerta {
+        position: relative;
+    }
 
-    <h2 class="mb-3">Nuevo Embarque</h2>
+        .campo-alerta::after {
+            content: "?";
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: #dc3545;
+            color: white;
+            font-weight: bold;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    /* 🎨 COLORES SUAVES (NO CHILLONES) */
+    .bg-soft-danger {
+        background-color: #f8d7da !important; /* rojo suave */
+        color: #842029 !important;
+    }
 
-    <form asp-action="Create" method="post">
+    .bg-soft-success {
+        background-color: #d1e7dd !important; /* verde suave */
+        color: #0f5132 !important;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    table {
+        white-space: nowrap;
+    }
+
+    td, th {
+        min-width: 120px;
+        text-align: center;
+    }
+
+    input, select {
+        width: 100%;
+        min-width: 110px;
+        text-align: center;
+    }
+
+    .modelo-input {
+        min-width: 80px;
+    }
+
+    .grupo-header {
+        background: #343a40;
+        color: white;
+        font-weight: bold;
+    }
+</style>
+
+<div class="container-fluid mt-3">
+
+    <h4>
+        @(esEdicion ? "✏️ Editando Embarque" : "🚢 Nuevo Embarque")
+    </h4>
+
+    <form asp-action="@(esEdicion ? "Edit" : "Create")" method="post">
+
+        <input type="hidden" id="departureConfirmado" name="departureConfirmado" value="@Model.DepartureConfirmado.ToString().ToLower()" />
+        <input type="hidden" id="etaConfirmado" name="etaConfirmado" value="@Model.EtaConfirmado.ToString().ToLower()" />
+        @if (esEdicion)
+        {
+            <input type="hidden" name="id" value="@Model.Id" />
+        }
 
         <div class="table-responsive">
 
-            <table class="table table-bordered table-sm align-middle">
+            <table class="table table-bordered table-sm" id="tabla">
 
-                <thead class="table-dark">
+                <thead>
 
-                    <tr>
-
-                        <th>Status</th>
-                        <th>Brand</th>
-                        <th>Shipment</th>
-                        <th>Destination Port</th>
-                        <th>Incoterm</th>
-                        <th>Shipping Company</th>
-                        <th>Qty</th>
-
-                        <th>Polo Track</th>
-                        <th>Polo PA</th>
-                        <th>Virtus PA</th>
-                        <th>TERA</th>
-                        <th>SAVEIRO</th>
-                        <th>T-Cross PA</th>
-
-                        <th>EMZOOM</th>
-                        <th>GS4 MAX</th>
-                        <th>GS8 HV</th>
-                        <th>S7 HV</th>
-
-                        <th>AION UT</th>
-                        <th>AION ES</th>
-                        <th>AION Y</th>
-                        <th>AION V</th>
-
-                        <th>RBB 4X2</th>
-                        <th>RBB 4X4</th>
-                        <th>RBC 4X4</th>
-                        <th>RBC TA</th>
-                        <th>RBD PLUS</th>
-                        <th>MU-X</th>
-
-                        <th>GEOME</th>
-                        <th>EX2</th>
-                        <th>EX5</th>
-                        <th>STARRAY</th>
-
-                        <th>Departure</th>
-                        <th>ETA</th>
-                        <th>Tránsito</th>
-                        <th>Homologation</th>
-                        <th>Certificado INEN</th>
-                        <th>AFIP</th>
-
-                        <th>Invoice Copy</th>
-                        <th>BL Copy</th>
-                        <th>BL</th>
-                        <th>CO Copy</th>
-
-                        <th>Seguro</th>
-                        <th>Licencia INEN</th>
-                        <th>Packing</th>
-                        <th>Subcategorías</th>
-
-                        <th>Notificación SRI</th>
-                        <th>Destino Aduanero</th>
-                        <th>Tipo Pago</th>
-                        <th>Días Libres</th>
-
-                        <th>MRN</th>
-                        <th>Pre-liquidación</th>
-                        <th>Emisión BL</th>
-                        <th>CAS</th>
-                        <th>Pago Flete</th>
-
-                        <th>CO Original</th>
-                        <th>BL Original</th>
-                        <th>Invoice Original</th>
-
-                        <th>Estado Buque</th>
-                        <th>Nombre Buque</th>
-                        <th>Tracking</th>
-                        <th>Observaciones</th>
-
+                    <tr class="table-dark text-center" id="headerTipos">
+                        @for (int i = 0; i < preguntas.Count; i++)
+                        {
+                            <th rowspan="2">@(i + 1). @preguntas[i].Nombre</th>
+                        }
                     </tr>
+
+                    <tr class="table-secondary text-center" id="headerModelos"></tr>
 
                 </thead>
 
                 <tbody>
+                    <tr id="dataRow">
 
-                    <tr>
+                        @for (int i = 0; i < preguntas.Count; i++)
+                        {
+                            var p = preguntas[i];
+                            var nombre = p.Nombre.ToUpper();
+                            var ops = opciones.Where(o => o.PreguntaId == p.Id && o.Activo).ToList();
+                            var valor = GetValor(p.Id);
 
-                        <td>
-                            <select asp-for="Estado" class="form-control">
-                                <option>OPEN</option>
-                                <option>IN TRANSIT</option>
-                                <option>ARRIVED</option>
-                            </select>
-                        </td>
+                            <td>
 
-                        <td>
-                            <select asp-for="Brand" class="form-control">
-                                <option>VW</option>
-                                <option>GAC HIBRIDOS</option>
-                                <option>GAC ELECTRICOS</option>
-                                <option>ISUZU</option>
-                                <option>GEELY</option>
-                            </select>
-                        </td>
+                                @if (nombre.Contains("BRAND"))
+                                {
+                                    <select id="marcaSelect" name="pregunta_@p.Id" class="form-control">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var m in marcas)
+                                        {
+                                            <option value="@m.Value" selected="@(m.Value == valor)">
+                                                @m.Text
+                                            </option>
+                                        }
+                                    </select>
+                                }
+                                else if (indicesFecha.Contains(i))
+                                {
+                                    if (i == 7)
+                                    {
+                                        <input type="date" id="departureDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    }
+                                    else if (i == 8)
+                                    {
+                                        <input type="date" id="etaDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    }
+                                    else
+                                    {
+                                        <input type="date" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    }
+                                }
+                                else if (i == 9)
+                                {
+                                    <input type="text" id="transitoDias" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                }
+                                else if (ops.Any())
+                                {
+                                    <select name="pregunta_@p.Id" class="form-control">
+                                        <option value="">Seleccione</option>
+                                        @foreach (var o in ops)
+                                        {
+                                            <option selected="@(o.Valor == valor)">
+                                                @o.Valor
+                                            </option>
+                                        }
+                                    </select>
+                                }
+                                else if (nombre == "QTY")
+                                {
+                                    <input id="totalQty" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                }
+                                else
+                                {
+                                    <input type="text" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                }
 
-                        <td><input asp-for="Shipment" class="form-control" /></td>
-                        <td><input asp-for="DestinationPort" class="form-control" /></td>
-                        <td><input asp-for="Incoterm" class="form-control" /></td>
-                        <td><input asp-for="ShippingCompany" class="form-control" /></td>
-                        <td><input asp-for="Qty" class="form-control" /></td>
-
-                        <td><input name="PoloTrack" class="form-control" /></td>
-                        <td><input name="PoloPA" class="form-control" /></td>
-                        <td><input name="VirtusPA" class="form-control" /></td>
-                        <td><input name="TERA" class="form-control" /></td>
-                        <td><input name="SAVEIRO" class="form-control" /></td>
-                        <td><input name="TCross" class="form-control" /></td>
-
-                        <td><input name="EMZOOM" class="form-control" /></td>
-                        <td><input name="GS4MAX" class="form-control" /></td>
-                        <td><input name="GS8HV" class="form-control" /></td>
-                        <td><input name="S7HV" class="form-control" /></td>
-
-                        <td><input name="AIONUT" class="form-control" /></td>
-                        <td><input name="AIONES" class="form-control" /></td>
-                        <td><input name="AIONY" class="form-control" /></td>
-                        <td><input name="AIONV" class="form-control" /></td>
-
-                        <td><input name="RBB4X2" class="form-control" /></td>
-                        <td><input name="RBB4X4" class="form-control" /></td>
-                        <td><input name="RBC4X4" class="form-control" /></td>
-                        <td><input name="RBCTA" class="form-control" /></td>
-                        <td><input name="RBDPLUS" class="form-control" /></td>
-                        <td><input name="MUX" class="form-control" /></td>
-
-                        <td><input name="GEOME" class="form-control" /></td>
-                        <td><input name="EX2" class="form-control" /></td>
-                        <td><input name="EX5" class="form-control" /></td>
-                        <td><input name="STARRAY" class="form-control" /></td>
-
-                        <td><input asp-for="DepartureDate" type="date" class="form-control" /></td>
-                        <td><input asp-for="ETA" type="date" class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
-                        <td><input class="form-control" /></td>
+                            </td>
+                        }
 
                     </tr>
-
                 </tbody>
 
             </table>
 
         </div>
 
-        <br>
+        <button class="btn btn-primary mt-3">
+            @(esEdicion ? "Actualizar" : "Guardar")
+        </button>
 
-        <button class="btn btn-success">Guardar Embarque</button>
+        @if (esEdicion)
+        {
+            <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
+                📊 Auditoría
+            </button>
+        }
 
     </form>
-
 </div>
+@if (esEdicion)
+{
+    var auditoria = ViewBag.Auditoria as List<Seguimiento.Models.AuditoriaEmbarque> ?? new List<Seguimiento.Models.AuditoriaEmbarque>();
+
+    <div class="modal fade" id="modalAuditoria">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">📊 Historial del Embarque</h5>
+                </div>
+
+                <div class="modal-body">
+
+                    @if (!auditoria.Any())
+                    {
+                        <p class="text-muted">No hay registros de auditoría.</p>
+                    }
+                    else
+                    {
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="table-dark text-center">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var a in auditoria)
+                                {
+                                    <tr>
+                                        <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@a.Usuario</td>
+                                        <td>
+                                            @if (a.Accion == "CREACIÓN")
+                                            {
+                                                <span class="badge bg-success">CREACIÓN</span>
+                                            }
+                                            else if (a.Accion == "MODIFICACIÓN")
+                                            {
+                                                <span class="badge bg-warning text-dark">MODIFICACIÓN</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@a.Accion</span>
+                                            }
+                                        </td>
+                                        <td>@a.Detalle</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+}
+<script>
+        // =============================
+    // 🔵 ESTADO GLOBAL CONFIRMACIÓN
+    // =============================
+    let departureConfirmado = false;
+    let etaConfirmado = false;
+    let modelos = @Html.Raw(modelosJson);
+    let indexQty = @indexQty;
+
+    // 🔥 DISPARAR AUTOMÁTICO EN EDITAR
+       window.onload = function () {
+
+      
+    // 🔥 AUTO CONFIRMAR SI YA HAY FECHA
+    // =============================
+    let depVal = document.getElementById("departureDate")?.value;
+    let etaVal = document.getElementById("etaDate")?.value;
+    ///// Pinta de verde si se confirmo 
+             departureConfirmado = document.getElementById("departureConfirmado")?.value?.toLowerCase() === "true";
+             etaConfirmado = document.getElementById("etaConfirmado")?.value?.toLowerCase() === "true";
+        let marca = document.getElementById("marcaSelect").value;
+        if (marca) {
+            document.getElementById("marcaSelect").dispatchEvent(new Event('change'));
+        }
+
+        evaluarReglas();
+    };
+    document.getElementById("marcaSelect").addEventListener("change", function () {
+
+        let marcaId = parseInt(this.value);
+
+        let filtrados = modelos.filter(m => m.MarcaId === marcaId);
+
+        let headerTipos = document.getElementById("headerTipos");
+        let headerModelos = document.getElementById("headerModelos");
+        let dataRow = document.getElementById("dataRow");
+
+        document.querySelectorAll(".modelo-dinamico").forEach(e => e.remove());
+        headerModelos.innerHTML = "";
+
+        let basePos = indexQty + 1;
+
+        let refHeader = headerTipos.children[basePos];
+        let refModelos = headerModelos.children[basePos];
+        let refData = dataRow.children[basePos];
+
+        let grupos = {};
+
+        filtrados.forEach(m => {
+            if (!grupos[m.TipoId]) {
+                grupos[m.TipoId] = {
+                    nombre: m.Tipo,
+                    modelos: []
+                };
+            }
+            grupos[m.TipoId].modelos.push(m);
+        });
+
+        let listaGrupos = Object.values(grupos).sort((a, b) =>
+            a.nombre.localeCompare(b.nombre)
+        );
+
+        listaGrupos.forEach(grupo => {
+
+            let modelosGrupo = grupo.modelos;
+
+            if (!modelosGrupo || modelosGrupo.length === 0) return;
+
+            let thGrupo = document.createElement("th");
+            thGrupo.colSpan = modelosGrupo.length;
+            thGrupo.innerText = grupo.nombre.toUpperCase();
+            thGrupo.classList.add("grupo-header", "modelo-dinamico");
+
+            headerTipos.insertBefore(thGrupo, refHeader);
+
+            modelosGrupo.forEach(m => {
+
+                let th = document.createElement("th");
+                th.innerText = m.Nombre;
+                th.classList.add("modelo-dinamico");
+
+                headerModelos.insertBefore(th, refModelos);
+
+                let td = document.createElement("td");
+                td.classList.add("modelo-dinamico");
+
+                let input = document.createElement("input");
+                input.type = "number";
+                input.name = "modelo_" + m.Id;
+                input.className = "form-control modelo-input";
+
+                let existentes = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(modelosSeleccionados));
+                let found = existentes.find(x => x.ModeloId == m.Id);
+                if (found) input.value = found.Cantidad;
+
+                td.appendChild(input);
+                dataRow.insertBefore(td, refData);
+
+            });
+
+        });
+
+        evaluarReglas();
+
+    });
+
+    // 🔥 SUMA AUTOMÁTICA
+    document.addEventListener("input", function (e) {
+        if (e.target.classList.contains("modelo-input")) {
+            let total = 0;
+            document.querySelectorAll(".modelo-input").forEach(i => {
+                let val = parseInt(i.value);
+                if (!isNaN(val)) total += val;
+            });
+            document.getElementById("totalQty").value = total;
+        }
+
+        evaluarReglas();
+    });
+
+    // 🔥 CÁLCULO TRANSITO
+    function calcularTransito() {
+        let dep = document.getElementById("departureDate")?.value;
+        let eta = document.getElementById("etaDate")?.value;
+
+        if (dep && eta) {
+            let dias = Math.floor((new Date(eta) - new Date(dep)) / (1000 * 60 * 60 * 24));
+            document.getElementById("transitoDias").value = dias >= 0 ? dias : "";
+        }
+
+        evaluarReglas();
+    }
+
+       document.addEventListener("change", function (e) {
+
+        const id = e.target.id;
+
+        // =============================
+        // 🚢 DEPARTURE
+        // =============================
+        if (id === "departureDate") {
+
+            console.log("Cambio en departure detectado"); // 👈 DEBUG
+
+            if (e.target.value) {
+
+                let confirmacion = confirm("¿La fecha DEPARTURE está confirmada?");
+
+                    departureConfirmado = confirmacion;
+                     document.getElementById("departureConfirmado").value = confirmacion;
+
+                if (!confirmacion) departureConfirmado = false;
+            }
+
+            calcularTransito();
+            evaluarReglas();
+        }
+
+        // =============================
+        // 🚢 ETA
+        // =============================
+        if (id === "etaDate") {
+
+            console.log("Cambio en ETA detectado"); // 👈 DEBUG
+
+            if (e.target.value) {
+
+                let confirmacion = confirm("¿La fecha ETA está confirmada?");
+
+                    etaConfirmado = confirmacion;
+    document.getElementById("etaConfirmado").value = confirmacion;
+
+                if (!confirmacion) etaConfirmado = false;
+            }
+
+            calcularTransito();
+            evaluarReglas();
+        }
+    });
+
+
+    // =====================================================
+    // 🔥🔥🔥 MOTOR DE VALIDACIONES
+    // =====================================================
+            function evaluarReglas() {
+
+        let hoy = new Date();
+
+        let departureVal = document.getElementById("departureDate")?.value;
+        let etaVal = document.getElementById("etaDate")?.value;
+
+        let departure = esFechaValida(departureVal) ? new Date(departureVal) : null;
+        let eta = esFechaValida(etaVal) ? new Date(etaVal) : null;
+
+        function dias(f1, f2) {
+            if (!f1 || !f2) return 0;
+            return Math.floor((f1 - f2) / (1000 * 60 * 60 * 24));
+        }
+
+              function rojo(el) {
+        if (!el) return;
+
+        el.classList.remove("bg-soft-success");
+        el.classList.add("bg-soft-danger");
+
+        // 🔥 agregar icono ?
+        el.classList.add("campo-alerta");
+    }
+
+    function verde(el) {
+        if (!el) return;
+
+        el.classList.remove("bg-soft-danger", "campo-alerta");
+        el.classList.add("bg-soft-success");
+    }
+
+        function get(id) {
+            return document.querySelector("[name='pregunta_" + id + "']");
+        }
+
+        function esFechaValida(valor) {
+            return valor && !isNaN(Date.parse(valor));
+        }
+
+        function getFecha(id) {
+            let el = get(id);
+            if (el && esFechaValida(el.value)) {
+                return new Date(el.value);
+            }
+            return null;
+        }
+
+        // =============================
+        // 🎨 BRAND COLOR
+        // =============================
+        let marca = document.getElementById("marcaSelect");
+
+       /* if (marca) {
+            let txt = marca.options[marca.selectedIndex]?.text.toUpperCase();
+
+            marca.classList.remove("bg-primary","bg-danger","bg-dark","bg-light");
+
+            if (txt.includes("VW")) marca.classList.add("bg-primary");
+            if (txt.includes("ISUZU")) marca.classList.add("bg-danger");
+            if (txt.includes("GEELY")) marca.classList.add("bg-dark");
+            if (txt.includes("GAC")) marca.classList.add("bg-light");
+        }*/
+
+        // =============================
+        // 🔴 DESPUÉS DE DEPARTURE (1 DÍA)
+        // =============================
+        if (departure && dias(hoy, departure) >= 1) {
+
+            if (!get(4)?.value) rojo(get(4));
+            if (!get(6)?.value) rojo(get(6));
+
+            [11,12,13].forEach(i => {
+                if (!get(i)?.value) rojo(get(i));
+            });
+        }
+
+        // =============================
+        // 🔴 DESPUÉS DE DEPARTURE (5 DÍAS)
+        // =============================
+        if (departure && dias(hoy, departure) >= 5) {
+
+            [14,15,16,17,18].forEach(i => {
+                if (!get(i)?.value) rojo(get(i));
+            });
+        }
+
+        // =============================
+        // 🔴 DESPUÉS DE DEPARTURE (7 DÍAS)
+        // =============================
+        if (departure && dias(hoy, departure) >= 7) {
+
+            if (!get(19)?.value) rojo(get(19));
+        }
+
+        // =============================
+        // 🔴 DEPENDENCIA INVOICE
+        // =============================
+        let invoice = getFecha(14);
+
+        if (invoice && dias(hoy, invoice) >= 5) {
+            if (!get(20)?.value) rojo(get(20));
+        }
+
+        if (invoice && dias(hoy, invoice) >= 7) {
+            if (!get(21)?.value) rojo(get(21));
+        }
+
+        // =============================
+        // 🔴 SUBCATEGORIA
+        // =============================
+        let subcat = getFecha(21);
+
+        if (subcat && dias(hoy, subcat) >= 5) {
+            if (!get(22)?.value) rojo(get(22));
+        }
+
+        // =============================
+        // 🔴 ANTES DE ETA
+        // =============================
+        if (eta) {
+
+            if (dias(eta, hoy) <= 5) {
+                [23,24,25,27,28].forEach(i => {
+                    if (!get(i)?.value) rojo(get(i));
+                });
+            }
+
+            if (dias(eta, hoy) <= 3) {
+                if (!get(26)?.value) rojo(get(26));
+            }
+
+            if (dias(eta, hoy) <= 1) {
+                if (!get(29)?.value) rojo(get(29));
+            }
+        }
+
+        // =============================
+        // 🟢 CONFIRMACIÓN USUARIO
+        // =============================
+        if (departureConfirmado) {
+            verde(document.getElementById("departureDate"));
+        }
+
+        if (etaConfirmado) {
+            verde(document.getElementById("etaDate"));
+        }
+            // =============================
+    // 🔥 CAMPOS VACÍOS GENERALES
+    // =============================
+    document.querySelectorAll("#dataRow input, #dataRow select").forEach(el => {
+
+        if (el.type === "hidden" || el.readOnly) return;
+
+        let valor = el.value?.trim();
+
+            if (!valor) {
+        rojo(el);
+    } else {
+        // 🔥 quitar cualquier rojo si ya llenó
+        el.classList.remove("bg-soft-danger", "campo-alerta");
+
+        // 🚫 NO poner verde
+    }
+
+    });
+    }
+    
+    document.addEventListener("DOMContentLoaded", function () {
+
+        // 🔥 buscar el primer select (STATUS)
+        let statusInput = document.querySelector("#dataRow td:first-child select, #dataRow td:first-child input");
+
+        if (!statusInput) {
+            console.log("No se encontró STATUS");
+            return;
+        }
+
+        let statusValor = statusInput.value?.toLowerCase().trim();
+
+        console.log("STATUS DETECTADO:", statusValor);
+
+        if (statusValor === "closed") {
+
+            // 🔒 bloquear TODO menos hidden
+            document.querySelectorAll("input, select, textarea").forEach(e => {
+                if (e.type !== "hidden") {
+                    e.disabled = true;
+                }
+            });
+
+            // 🔒 bloquear botón
+            let btn = document.querySelector("button[type='submit']");
+            if (btn) btn.disabled = true;
+
+            // 🔥 mensaje visual
+            let alerta = document.createElement("div");
+            alerta.className = "alert alert-danger mt-2";
+            alerta.innerText = "🔒 Embarque cerrado - no editable";
+
+            document.querySelector(".container-fluid").prepend(alerta);
+        }
+
+    });
+
+</script>

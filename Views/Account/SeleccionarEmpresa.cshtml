@@ -20,14 +20,15 @@
 
         body {
             height: 100vh;
-            background-image: url('/images/fondo.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
+            margin: 0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-family: Segoe UI;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('@Url.Content("~/images/fondo.png")');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
         .overlay {
@@ -102,7 +103,7 @@
 
                 <label class="form-label">Empresa</label>
 
-                <select name="empresaId" class="form-control" required>
+                <select name="Id" class="form-control" required>
 
                     <option value="">Seleccione una empresa</option>
 

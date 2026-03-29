@@ -20,6 +20,9 @@ namespace Seguimiento.Models
         public DateTime FechaCreacion { get; set; }
 
         public ICollection<UsuarioEmpresa> UsuarioEmpresas { get; set; }
+        public int RolId { get; set; }   // ya lo tienes en BD
+
+        public Rol Rol { get; set; }     // 🔥 ESTA ES LA CLAVE
 
     }
 }

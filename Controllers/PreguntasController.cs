@@ -19,79 +19,113 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
-        // GET: Preguntas
+        // ===============================
+        // LISTA DE PREGUNTAS
+        // ===============================
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Preguntas.ToListAsync());
+            var preguntas = _context.Preguntas
+                .Include(p => p.Modelo)
+                    .ThenInclude(m => m.Marca)
+                        .ThenInclude(m => m.MarcaEmpresas)
+                            .ThenInclude(me => me.Empresa);
+
+            return View(await preguntas.ToListAsync());
         }
 
-        // GET: Preguntas/Details/5
+        // ===============================
+        // DETAILS
+        // ===============================
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var pregunta = await _context.Preguntas
+                .Include(p => p.Modelo)
+                    .ThenInclude(m => m.Marca)
+                        .ThenInclude(m => m.MarcaEmpresas)
+                            .ThenInclude(me => me.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (pregunta == null)
-            {
                 return NotFound();
-            }
 
             return View(pregunta);
         }
 
-        // GET: Preguntas/Create
+        // ===============================
+        // CREATE GET
+        // ===============================
         public IActionResult Create()
         {
+            ViewData["ModeloId"] = new SelectList(
+                _context.Modelos
+                    .Include(m => m.Marca),
+                "Id",
+                "Nombre"
+            );
+
             return View();
         }
 
-        // POST: Preguntas/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // ===============================
+        // CREATE POST
+        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Nombre,TipoCampoId,Orden,Activo")] Pregunta pregunta)
+        public async Task<IActionResult> Create([Bind("Id,ModeloId,Nombre,TipoCampoId,Orden,Activo")] Pregunta pregunta)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(pregunta);
+                _context.Preguntas.Add(pregunta);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewData["ModeloId"] = new SelectList(
+                _context.Modelos,
+                "Id",
+                "Nombre",
+                pregunta.ModeloId
+            );
+
             return View(pregunta);
         }
 
-        // GET: Preguntas/Edit/5
+        // ===============================
+        // EDIT GET
+        // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var pregunta = await _context.Preguntas.FindAsync(id);
+
             if (pregunta == null)
-            {
                 return NotFound();
-            }
+
+            ViewData["ModeloId"] = new SelectList(
+                _context.Modelos,
+                "Id",
+                "Nombre",
+                pregunta.ModeloId
+            );
+
             return View(pregunta);
         }
 
-        // POST: Preguntas/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // ===============================
+        // EDIT POST
+        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre,TipoCampoId,Orden,Activo")] Pregunta pregunta)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,ModeloId,Nombre,TipoCampoId,Orden,Activo")] Pregunta pregunta)
         {
             if (id != pregunta.Id)
-            {
                 return NotFound();
-            }
 
             if (ModelState.IsValid)
             {
@@ -103,49 +137,57 @@ namespace Seguimiento.Controllers
                 catch (DbUpdateConcurrencyException)
                 {
                     if (!PreguntaExists(pregunta.Id))
-                    {
                         return NotFound();
-                    }
                     else
-                    {
                         throw;
-                    }
                 }
+
                 return RedirectToAction(nameof(Index));
             }
+
+            ViewData["ModeloId"] = new SelectList(
+                _context.Modelos,
+                "Id",
+                "Nombre",
+                pregunta.ModeloId
+            );
+
             return View(pregunta);
         }
 
-        // GET: Preguntas/Delete/5
+        // ===============================
+        // DELETE
+        // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var pregunta = await _context.Preguntas
+                .Include(p => p.Modelo)
+                    .ThenInclude(m => m.Marca)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (pregunta == null)
-            {
                 return NotFound();
-            }
 
             return View(pregunta);
         }
 
-        // POST: Preguntas/Delete/5
+        // ===============================
+        // DELETE CONFIRMED
+        // ===============================
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var pregunta = await _context.Preguntas.FindAsync(id);
+
             if (pregunta != null)
-            {
                 _context.Preguntas.Remove(pregunta);
-            }
 
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 

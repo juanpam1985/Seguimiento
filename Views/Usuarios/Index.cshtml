@@ -103,12 +103,12 @@
                 <thead>
 
                     <tr>
-
-                        <th onclick="ordenarTabla(0)">Nombre ▲▼</th>
-                        <th onclick="ordenarTabla(1)">Email ▲▼</th>
-                        <th onclick="ordenarTabla(2)">Estado ▲▼</th>
-                        <th style="width:200px">Acciones</th>
-
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Empresas</th>
+                        <th>Estado</th>
+                        <th style="width:220px">Acciones</th>
                     </tr>
 
                 </thead>
@@ -117,7 +117,6 @@
 
                     @foreach (var item in Model)
                     {
-
                         <tr>
 
                             <td>
@@ -126,6 +125,28 @@
 
                             <td>
                                 @item.Email
+                            </td>
+
+                            <td>
+                                @(item.Rol != null ? item.Rol.Nombre : "Sin rol")
+                            </td>
+
+                            <td>
+
+                                @if (item.UsuarioEmpresas != null && item.UsuarioEmpresas.Any())
+                                {
+                                    foreach (var emp in item.UsuarioEmpresas)
+                                    {
+                                        <span class="badge bg-light text-dark me-1">
+                                            @emp.Empresa?.Nombre
+                                        </span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">---</span>
+                                }
+
                             </td>
 
                             <td>
@@ -162,7 +183,6 @@
                             </td>
 
                         </tr>
-
                     }
 
                 </tbody>
@@ -178,52 +198,28 @@
 <script>
 
     // BUSCADOR
-
     document.getElementById("buscarUsuario").addEventListener("keyup", function(){
 
-    let filtro = this.value.toLowerCase();
-    let filas = document.querySelectorAll("#tablaUsuarios tbody tr");
-    let total = 0;
+        let filtro = this.value.toLowerCase();
+        let filas = document.querySelectorAll("#tablaUsuarios tbody tr");
+        let total = 0;
 
-    filas.forEach(fila => {
+        filas.forEach(fila => {
 
-    let texto = fila.innerText.toLowerCase();
+            let texto = fila.innerText.toLowerCase();
 
-    if(texto.includes(filtro)){
-    fila.style.display="";
-    total++;
-    }
-    else{
-    fila.style.display="none";
-    }
+            if(texto.includes(filtro)){
+                fila.style.display="";
+                total++;
+            }
+            else{
+                fila.style.display="none";
+            }
 
-    });
+        });
 
-    document.getElementById("totalUsuarios").innerText = total;
-
-    });
-
-
-    // ORDENAR TABLA
-
-    function ordenarTabla(columna){
-
-    let tabla = document.getElementById("tablaUsuarios");
-    let filas = Array.from(tabla.rows).slice(1);
-
-    let asc = tabla.classList.toggle("asc");
-
-    filas.sort((a,b)=>{
-
-    let A = a.cells[columna].innerText;
-    let B = b.cells[columna].innerText;
-
-    return asc ? A.localeCompare(B) : B.localeCompare(A);
+        document.getElementById("totalUsuarios").innerText = total;
 
     });
-
-    filas.forEach(f=>tabla.appendChild(f));
-
-    }
 
 </script>

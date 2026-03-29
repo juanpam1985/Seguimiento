@@ -1,42 +1,57 @@
 ﻿@model Seguimiento.Models.Pregunta
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle de Pregunta";
 }
 
-<h1>Details</h1>
+<div class="container mt-4">
 
-<div>
-    <h4>Pregunta</h4>
+    <h2>📋 Detalle de Pregunta</h2>
+
     <hr />
+
     <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Nombre)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Nombre)
+
+        <dt class="col-sm-3 fw-bold">Nombre</dt>
+        <dd class="col-sm-9">@Model.Nombre</dd>
+
+        <dt class="col-sm-3 fw-bold">Orden</dt>
+        <dd class="col-sm-9">@Model.Orden</dd>
+
+        <dt class="col-sm-3 fw-bold">Activo</dt>
+        <dd class="col-sm-9">
+            @if (Model.Activo)
+            {
+                <span class="badge bg-success">Sí</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">No</span>
+            }
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.TipoCampoId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.TipoCampoId)
+
+        <dt class="col-sm-3 fw-bold">Tipo</dt>
+        <dd class="col-sm-9">
+            @if (Model.EsGeneral)
+            {
+                <span class="badge bg-primary">General</span>
+            }
+            else
+            {
+                <span class="badge bg-info text-dark">Por Modelo</span>
+            }
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Orden)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Orden)
+
+        <dt class="col-sm-3 fw-bold">Modelo</dt>
+        <dd class="col-sm-9">
+            @(Model.Modelo != null ? Model.Modelo.Nombre : "Todos")
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Activo)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Activo)
-        </dd>
+
     </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+
+    <div class="mt-3">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">✏️ Editar</a>
+        <a asp-action="Index" class="btn btn-secondary">⬅ Volver</a>
+    </div>
+
 </div>

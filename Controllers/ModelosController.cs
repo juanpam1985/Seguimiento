@@ -19,87 +19,116 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
-        // GET: Modelos
+        // ===============================
+        // INDEX
+        // ===============================
         public IActionResult Index()
         {
             var modelos = _context.Modelos
                 .Include(m => m.Marca)
+                .Include(m => m.TipoModelo) // 🔥 NUEVO
                 .ToList();
 
             return View(modelos);
         }
 
-        // GET: Modelos/Details/5
+        // ===============================
+        // DETAILS
+        // ===============================
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var modelo = await _context.Modelos
                 .Include(m => m.Marca)
+                .Include(m => m.TipoModelo) // 🔥 NUEVO
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (modelo == null)
-            {
                 return NotFound();
-            }
 
             return View(modelo);
         }
 
-        // GET: Modelos/Create
+        // ===============================
+        // CREATE GET
+        // ===============================
         public IActionResult Create()
         {
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "Id", "Id");
+            CargarMarcas();
+            CargarTiposModelo(); // 🔥 NUEVO
             return View();
         }
 
-        // POST: Modelos/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // ===============================
+        // CREATE POST
+        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,MarcaId,Nombre,Activo")] Modelo modelo)
+        public async Task<IActionResult> Create([Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
         {
-            if (ModelState.IsValid)
+            if (modelo.MarcaId == 0)
+                ModelState.AddModelError("MarcaId", "Debe seleccionar una marca");
+
+            if (modelo.TipoModeloId == null)
+                ModelState.AddModelError("TipoModeloId", "Debe seleccionar un tipo");
+
+            if (string.IsNullOrWhiteSpace(modelo.Nombre))
+                ModelState.AddModelError("Nombre", "El nombre es obligatorio");
+
+            if (!ModelState.IsValid)
             {
-                _context.Add(modelo);
+                CargarMarcas(modelo.MarcaId);
+                CargarTiposModelo(modelo.TipoModeloId);
+                return View(modelo);
+            }
+
+            try
+            {
+                _context.Modelos.Add(modelo);
                 await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "Id", "Id", modelo.MarcaId);
-            return View(modelo);
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error al guardar: " + ex.Message);
+
+                CargarMarcas(modelo.MarcaId);
+                CargarTiposModelo(modelo.TipoModeloId);
+                return View(modelo);
+            }
         }
 
-        // GET: Modelos/Edit/5
+        // ===============================
+        // EDIT GET
+        // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var modelo = await _context.Modelos.FindAsync(id);
+
             if (modelo == null)
-            {
                 return NotFound();
-            }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "Id", "Id", modelo.MarcaId);
+
+            CargarMarcas(modelo.MarcaId);
+            CargarTiposModelo(modelo.TipoModeloId);
+
             return View(modelo);
         }
 
-        // POST: Modelos/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // ===============================
+        // EDIT POST
+        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MarcaId,Nombre,Activo")] Modelo modelo)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
         {
             if (id != modelo.Id)
-            {
                 return NotFound();
-            }
 
             if (ModelState.IsValid)
             {
@@ -111,26 +140,28 @@ namespace Seguimiento.Controllers
                 catch (DbUpdateConcurrencyException)
                 {
                     if (!ModeloExists(modelo.Id))
-                    {
                         return NotFound();
-                    }
                     else
-                    {
                         throw;
-                    }
                 }
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["MarcaId"] = new SelectList(_context.Marcas, "Id", "Id", modelo.MarcaId);
+
+            CargarMarcas(modelo.MarcaId);
+            CargarTiposModelo(modelo.TipoModeloId);
+
             return View(modelo);
         }
 
-        //MEJORA CONSULTA MODELO SEGUN LA MARCA
+        // ===============================
+        // API MODELOS POR MARCA
+        // ===============================
         [HttpGet]
         public IActionResult ObtenerPorMarca(int marcaId)
         {
             var modelos = _context.Modelos
-                .Where(m => m.MarcaId == marcaId && m.Activo == true)
+                .Where(m => m.MarcaId == marcaId && m.Activo)
                 .Select(m => new
                 {
                     id = m.Id,
@@ -142,44 +173,72 @@ namespace Seguimiento.Controllers
             return Json(modelos);
         }
 
-
-        // GET: Modelos/Delete/5
+        // ===============================
+        // DELETE
+        // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var modelo = await _context.Modelos
                 .Include(m => m.Marca)
+                .Include(m => m.TipoModelo) // 🔥 NUEVO
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (modelo == null)
-            {
                 return NotFound();
-            }
 
             return View(modelo);
         }
 
-        // POST: Modelos/Delete/5
+        // ===============================
+        // DELETE CONFIRMED
+        // ===============================
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var modelo = await _context.Modelos.FindAsync(id);
+
             if (modelo != null)
-            {
                 _context.Modelos.Remove(modelo);
-            }
 
             await _context.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool ModeloExists(int id)
         {
             return _context.Modelos.Any(e => e.Id == id);
+        }
+
+        // ===============================
+        // MÉTODOS REUTILIZABLES
+        // ===============================
+        private void CargarMarcas(object selected = null)
+        {
+            ViewData["MarcaId"] = new SelectList(
+                _context.Marcas
+                    .Where(m => m.Activo)
+                    .OrderBy(m => m.Nombre),
+                "Id",
+                "Nombre",
+                selected
+            );
+        }
+
+        private void CargarTiposModelo(object selected = null)
+        {
+            ViewData["TipoModeloId"] = new SelectList(
+                _context.TipoModelo
+                    .Where(t => t.Activo)
+                    .OrderBy(t => t.Nombre),
+                "Id",
+                "Nombre",
+                selected
+            );
         }
     }
 }

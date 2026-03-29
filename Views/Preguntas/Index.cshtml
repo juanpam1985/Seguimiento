@@ -4,177 +4,94 @@
     ViewData["Title"] = "Preguntas";
 }
 
-<style>
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 25px;
-    }
-
-    .btn-lozano {
-        background: #f05a28;
-        border: none;
-        color: white;
-    }
-
-        .btn-lozano:hover {
-            background: #d84c1b;
-        }
-
-    .card-table {
-        background: white;
-        border-radius: 10px;
-        padding: 25px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-    }
-
-    .table thead {
-        background: #2c3e50;
-        color: white;
-    }
-
-    .table td {
-        vertical-align: middle;
-    }
-
-    .table tbody tr:hover {
-        background: #f8f9fa;
-    }
-
-    .badge-activo {
-        background: #e8f5e9;
-        color: #2e7d32;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
-
-    .badge-inactivo {
-        background: #ffebee;
-        color: #c62828;
-        padding: 5px 10px;
-        border-radius: 6px;
-    }
-
-    .acciones {
-        white-space: nowrap;
-    }
-
-    .search-box {
-        width: 300px;
-    }
-
-    .counter {
-        font-size: 14px;
-        color: #6c757d;
-    }
-
-</style>
-
 <div class="container-fluid mt-4">
 
-    <div class="page-header">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>❓ Preguntas del Sistema</h3>
 
-        <h3>Preguntas del Sistema</h3>
+        <div class="d-flex gap-2">
+            <input id="buscarPregunta" type="text" class="form-control" placeholder="🔍 Buscar pregunta..." style="width:300px;" />
 
-        <div class="d-flex gap-3">
-
-            <input id="buscarPregunta" type="text" class="form-control search-box" placeholder="🔍 Buscar pregunta...">
-
-            <a asp-action="Create" class="btn btn-lozano">
-                + Nueva Pregunta
+            <a asp-action="Create" class="btn btn-primary">
+                ➕ Nueva Pregunta
             </a>
-
         </div>
-
     </div>
 
-    <div class="counter mb-2">
+    <div class="mb-2">
         Total preguntas: <strong id="totalPreguntas">@Model.Count()</strong>
     </div>
 
-    <div class="card-table">
+    <div class="table-responsive">
 
-        <div class="table-responsive">
+        <table id="tablaPreguntas" class="table table-bordered table-hover align-middle">
 
-            <table id="tablaPreguntas" class="table table-hover">
+            <thead class="table-dark text-center">
+                <tr>
+                    <th onclick="ordenarTabla(0)">Pregunta ▲▼</th>
+                    <th onclick="ordenarTabla(1)">Modelo ▲▼</th>
+                    <th onclick="ordenarTabla(2)">Orden ▲▼</th>
+                    <th onclick="ordenarTabla(3)">General ▲▼</th>
+                    <th onclick="ordenarTabla(4)">Estado ▲▼</th>
+                    <th style="width:200px">Acciones</th>
+                </tr>
+            </thead>
 
-                <thead>
+            <tbody>
 
+                @foreach (var item in Model)
+                {
                     <tr>
 
-                        <th onclick="ordenarTabla(0)">Pregunta ▲▼</th>
-                        <th onclick="ordenarTabla(1)">Tipo Campo ▲▼</th>
-                        <th onclick="ordenarTabla(2)">Orden ▲▼</th>
-                        <th onclick="ordenarTabla(3)">Estado ▲▼</th>
-                        <th style="width:200px">Acciones</th>
+                        <td>
+                            <strong>@item.Nombre</strong>
+                        </td>
+
+                        <td class="text-center">
+                            @(item.Modelo != null ? item.Modelo.Nombre : "General")
+                        </td>
+
+                        <td class="text-center">
+                            @item.Orden
+                        </td>
+
+                        <td class="text-center">
+                            @(item.EsGeneral ? "✔️" : "-")
+                        </td>
+
+                        <td class="text-center">
+                            @if (item.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactivo</span>
+                            }
+                        </td>
+
+                        <td class="text-center">
+
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                ✏️
+                            </a>
+
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">
+                                🔍
+                            </a>
+
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                🗑️
+                            </a>
+
+                        </td>
 
                     </tr>
+                }
 
-                </thead>
+            </tbody>
 
-                <tbody>
-
-                    @foreach (var item in Model)
-                    {
-
-                        <tr>
-
-                            <td>
-                                <strong>@item.Nombre</strong>
-                            </td>
-
-                            <td>
-                                @item.TipoCampoId
-                            </td>
-
-                            <td>
-                                @item.Orden
-                            </td>
-
-                            <td>
-
-                                @if (item.Activo)
-                                {
-                                    <span class="badge-activo">Activo</span>
-                                }
-                                else
-                                {
-                                    <span class="badge-inactivo">Inactivo</span>
-                                }
-
-                            </td>
-
-                            <td class="acciones">
-
-                                <div class="btn-group btn-group-sm">
-
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">
-                                        ✏ Editar
-                                    </a>
-
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">
-                                        🔎 Ver
-                                    </a>
-
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">
-                                        🗑 Eliminar
-                                    </a>
-
-                                </div>
-
-                            </td>
-
-                        </tr>
-
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
+        </table>
 
     </div>
 
@@ -183,52 +100,47 @@
 <script>
 
     // BUSCADOR
+    document.getElementById("buscarPregunta").addEventListener("keyup", function () {
 
-    document.getElementById("buscarPregunta").addEventListener("keyup", function(){
+        let filtro = this.value.toLowerCase();
+        let filas = document.querySelectorAll("#tablaPreguntas tbody tr");
+        let total = 0;
 
-    let filtro = this.value.toLowerCase();
-    let filas = document.querySelectorAll("#tablaPreguntas tbody tr");
-    let total = 0;
+        filas.forEach(fila => {
 
-    filas.forEach(fila => {
+            let texto = fila.innerText.toLowerCase();
 
-    let texto = fila.innerText.toLowerCase();
+            if (texto.includes(filtro)) {
+                fila.style.display = "";
+                total++;
+            } else {
+                fila.style.display = "none";
+            }
 
-    if(texto.includes(filtro)){
-    fila.style.display="";
-    total++;
-    }
-    else{
-    fila.style.display="none";
-    }
+        });
 
-    });
-
-    document.getElementById("totalPreguntas").innerText = total;
+        document.getElementById("totalPreguntas").innerText = total;
 
     });
 
+    // ORDENAR
+    function ordenarTabla(columna) {
 
-    // ORDENAR TABLA
+        let tabla = document.getElementById("tablaPreguntas");
+        let filas = Array.from(tabla.rows).slice(1);
 
-    function ordenarTabla(columna){
+        let asc = tabla.classList.toggle("asc");
 
-    let tabla = document.getElementById("tablaPreguntas");
-    let filas = Array.from(tabla.rows).slice(1);
+        filas.sort((a, b) => {
 
-    let asc = tabla.classList.toggle("asc");
+            let A = a.cells[columna].innerText;
+            let B = b.cells[columna].innerText;
 
-    filas.sort((a,b)=>{
+            return asc ? A.localeCompare(B) : B.localeCompare(A);
 
-    let A = a.cells[columna].innerText;
-    let B = b.cells[columna].innerText;
+        });
 
-    return asc ? A.localeCompare(B) : B.localeCompare(A);
-
-    });
-
-    filas.forEach(f=>tabla.appendChild(f));
-
+        filas.forEach(f => tabla.appendChild(f));
     }
 
 </script>

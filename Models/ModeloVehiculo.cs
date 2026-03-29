@@ -6,7 +6,7 @@ namespace Seguimiento.Models
     {
         public int Id { get; set; }
 
-        public int EmpresaId { get; set; }
+     
 
         [Required]
         public string Nombre { get; set; }

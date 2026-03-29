@@ -1,127 +1,288 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var usuario = HttpContextAccessor.HttpContext.Session.GetString("UsuarioNombre");
+    var empresa = HttpContextAccessor.HttpContext.Session.GetString("EmpresaNombre");
+}
+
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
 
     <meta charset="utf-8" />
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>@ViewData["Title"] - Sistema Seguimiento Embarques</title>
+    <title>@ViewData["Title"] - Sistema Embarques</title>
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
 
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
-    <link rel="stylesheet" href="~/Seguimiento.styles.css" asp-append-version="true" />
+    <!-- ICONOS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
     <style>
-
-        html, body {
-            height: 100%;
-            width: 100%;
+        body {
+            margin: 0;
+            background: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma;
         }
 
-        main {
-            width: 100%;
+        /* NAVBAR */
+        .navbar {
+            background: linear-gradient(90deg, #111827, #1f2937);
+            padding: 8px 18px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
         }
 
-        .full-width-page {
-            width: 100%;
-            max-width: 100%;
-            padding-left: 25px;
-            padding-right: 25px;
+        .navbar-brand {
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
+        /* MENÚ MÁS COMPACTO */
+        .nav-link {
+            font-size: 13px;
+            font-weight: 500;
+            color: #d1d5db !important;
+            margin-right: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+            .nav-link:hover {
+                background: rgba(255,255,255,0.08);
+                color: white !important;
+            }
+
+        /* DROPDOWN PRO */
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            padding: 8px;
+            min-width: 230px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+        }
+
+        .dropdown-header {
+            font-size: 11px;
+            color: #9ca3af;
+            padding-left: 12px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+            .dropdown-item i {
+                font-size: 16px;
+                color: #6b7280;
+            }
+
+            .dropdown-item:hover {
+                background: #2563eb;
+                color: white;
+            }
+
+                .dropdown-item:hover i {
+                    color: white;
+                }
+
+        /* USUARIO */
+        .user-info {
+            font-size: 12px;
+        }
+
+        .empresa {
+            color: #e5e7eb;
+        }
+
+        .usuario {
+            color: #22c55e;
+        }
+
+        .logout {
+            color: #fbbf24 !important;
+        }
+
+            .logout:hover {
+                color: #fde68a !important;
+            }
+
+        /* CONTENIDO */
+        .content {
+            padding: 20px 25px;
+        }
+
+        /* BREADCRUMB */
+        .breadcrumb-box {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
     </style>
 
 </head>
 
 <body>
 
-    <header>
+    <nav class="navbar navbar-expand-lg navbar-dark">
 
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
 
-            <div class="container-fluid">
+            <!-- LOGO -->
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                <i class="bi bi-rocket-takeoff-fill"></i>
+                Sistema Embarques
+            </a>
 
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    Sistema Embarques
-                </a>
+            <button class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-                <button class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbarMain">
+            <div class="collapse navbar-collapse" id="navbarMain">
 
-                    <span class="navbar-toggler-icon"></span>
+                <ul class="navbar-nav me-auto">
 
-                </button>
+                    <!-- ADMIN -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear-fill"></i> Administración
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header">Gestión base</li>
 
-                <div class="collapse navbar-collapse" id="navbarMain">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Empresas" asp-action="Index">
+                                    <i class="bi bi-buildings"></i> Empresas
+                                </a>
+                            </li>
 
-                    <ul class="navbar-nav me-auto">
+                            <li>
+                                <a class="dropdown-item" asp-controller="Usuarios" asp-action="Index">
+                                    <i class="bi bi-person-badge"></i> Usuarios
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
 
-                     
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Empresas" asp-action="Index">Empresas</a>
-                        </li>
+                    <!-- MANTENIMIENTO -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-tools"></i> Mantenimiento
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header">Configuración</li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Usuarios" asp-action="Index">Usuarios</a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Marcas" asp-action="Index">
+                                    <i class="bi bi-tags"></i> Marcas
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Marcas" asp-action="Index">Marcas</a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Modelos" asp-action="Index">
+                                    <i class="bi bi-box"></i> Modelos
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Modelos" asp-action="Index">Modelos</a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Preguntas" asp-action="Index">
+                                    <i class="bi bi-ui-checks"></i> Preguntas
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Preguntas" asp-action="Index">Preguntas</a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="OpcionesLista" asp-action="Index">
+                                    <i class="bi bi-list-check"></i> Opciones Lista
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="OpcionesLista" asp-action="Index">Opciones Lista</a>
-                        </li>
+                    <!-- OPERACION -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="bi bi-truck"></i> Operación
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li class="dropdown-header">Procesos</li>
 
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Embarques" asp-action="Dashboard">Embarques</a>
-                        </li>
+                            <li>
+                                <a class="dropdown-item" asp-controller="Embarques" asp-action="Dashboard">
+                                    <i class="bi bi-truck-front"></i> Embarques
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
 
-                    </ul>
+                    <!-- KPI -->
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="KPI" asp-action="Index">
+                            <i class="bi bi-bar-chart-fill"></i> KPI
+                        </a>
+                    </li>
 
-                </div>
+                </ul>
+
+                <!-- DERECHA -->
+                <ul class="navbar-nav ms-auto user-info">
+
+                    <li class="nav-item">
+                        <span class="nav-link empresa">
+                            <i class="bi bi-building"></i> @empresa
+                        </span>
+                    </li>
+
+                    <li class="nav-item">
+                        <span class="nav-link usuario">
+                            <i class="bi bi-person-circle"></i> @usuario
+                        </span>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link logout" asp-controller="Account" asp-action="Logout">
+                            <i class="bi bi-box-arrow-right"></i> Salir
+                        </a>
+                    </li>
+
+                </ul>
 
             </div>
 
-        </nav>
+        </div>
 
-    </header>
+    </nav>
 
+    <div class="content">
 
-
-    <main class="full-width-page">
+        <div class="breadcrumb-box">
+            📍 Inicio / @ViewData["Title"]
+        </div>
 
         @RenderBody()
 
-    </main>
-
-
-
-    
-
-
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    </div>
 
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script src="~/js/site.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
-
+    @RenderSection("Scripts", required: false)
 </body>
 
 </html>

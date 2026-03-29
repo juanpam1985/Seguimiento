@@ -10,14 +10,9 @@ namespace Seguimiento.Models
 
         public int PreguntaId { get; set; }
 
-        public string ValorTexto { get; set; }
+        public string Valor { get; set; } // 🔥 NUEVO CAMPO
 
-        public decimal? ValorNumero { get; set; }
-
-        public DateTime? ValorFecha { get; set; }
-
-        public int? ValorListaId { get; set; }
-
-        public DateTime FechaRegistro { get; set; }
+        public DateTime? FechaRegistro { get; set; }
+        public Pregunta? Pregunta { get; set; }
     }
 }

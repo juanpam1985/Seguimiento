@@ -1,42 +1,105 @@
 ﻿@model Seguimiento.Models.Usuario
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle Usuario";
 }
 
-<h1>Details</h1>
+<div class="container mt-5">
 
-<div>
-    <h4>Usuario</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Nombre)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Nombre)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Email)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Email)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PasswordHash)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PasswordHash)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Activo)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Activo)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    <div class="card shadow-lg border-0">
+
+        <!-- HEADER -->
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0">👤 Detalle de Usuario</h4>
+        </div>
+
+        <!-- BODY -->
+        <div class="card-body">
+
+            @if (Model == null)
+            {
+                <div class="alert alert-danger">
+                    No se encontró el usuario.
+                </div>
+            }
+            else
+            {
+                <dl class="row">
+
+                    <dt class="col-sm-3 fw-bold">Nombre</dt>
+                    <dd class="col-sm-9">@Model.Nombre</dd>
+
+                    <dt class="col-sm-3 fw-bold">Usuario</dt>
+                    <dd class="col-sm-9">@Model.UsuarioLogin</dd>
+
+                    <dt class="col-sm-3 fw-bold">Correo</dt>
+                    <dd class="col-sm-9">@Model.Email</dd>
+
+                    <dt class="col-sm-3 fw-bold">Rol</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-primary">
+                            @(Model.Rol != null ? Model.Rol.Nombre : "Sin rol")
+                        </span>
+                    </dd>
+
+                    <!-- 🔥 NUEVO CAMPO IMPORTANTE -->
+                    <dt class="col-sm-3 fw-bold">Fecha creación</dt>
+                    <dd class="col-sm-9">
+                        @(Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm"))
+                    </dd>
+
+                    <dt class="col-sm-3 fw-bold">Estado</dt>
+                    <dd class="col-sm-9">
+                        @if (Model.Activo)
+                        {
+                            <span class="badge bg-success">Activo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">Inactivo</span>
+                        }
+                    </dd>
+
+                    <dt class="col-sm-3 fw-bold">Empresas</dt>
+                    <dd class="col-sm-9">
+
+                        @if (Model.UsuarioEmpresas != null && Model.UsuarioEmpresas.Any())
+                        {
+                            @foreach (var item in Model.UsuarioEmpresas)
+                            {
+                                <span class="badge bg-light text-dark me-1 mb-1">
+                                    @item.Empresa?.Nombre
+                                </span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted">Sin empresas asignadas</span>
+                        }
+
+                    </dd>
+
+                </dl>
+            }
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="card-footer d-flex justify-content-between">
+
+            <a asp-action="Index" class="btn btn-secondary">
+                ← Volver
+            </a>
+
+            @if (Model != null)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                    ✏️ Editar
+                </a>
+            }
+
+        </div>
+
+    </div>
+
 </div>

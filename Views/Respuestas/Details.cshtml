@@ -1,60 +1,39 @@
 ﻿@model Seguimiento.Models.Respuesta
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle Respuesta";
 }
 
-<h1>Details</h1>
+<h2>📄 Detalle de Respuesta</h2>
 
-<div>
-    <h4>Respuesta</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EmbarqueId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EmbarqueId)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PreguntaId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PreguntaId)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ValorTexto)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ValorTexto)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ValorNumero)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ValorNumero)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ValorFecha)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ValorFecha)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ValorListaId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ValorListaId)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.FechaRegistro)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FechaRegistro)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+<hr />
+
+<dl class="row">
+
+    <dt class="col-sm-2">Embarque</dt>
+    <dd class="col-sm-10">@Model.EmbarqueId</dd>
+
+    <dt class="col-sm-2">Pregunta</dt>
+    <dd class="col-sm-10">
+        @(Model.Pregunta != null
+            ? Model.Pregunta.Nombre
+            : Model.PreguntaId.ToString())
+    </dd>
+
+    <dt class="col-sm-2">Valor</dt>
+    <dd class="col-sm-10">
+        @(string.IsNullOrEmpty(Model.Valor) ? "-" : Model.Valor)
+    </dd>
+
+    <dt class="col-sm-2">Fecha Registro</dt>
+    <dd class="col-sm-10">
+        @(Model.FechaRegistro.HasValue
+            ? Model.FechaRegistro.Value.ToString("dd/MM/yyyy HH:mm")
+            : "-")
+    </dd>
+
+</dl>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">⬅ Volver</a>
 </div>

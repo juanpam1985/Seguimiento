@@ -1,71 +1,56 @@
 ﻿@model IEnumerable<Seguimiento.Models.Respuesta>
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Respuestas";
 }
 
-<h1>Index</h1>
+<h2>📋 Respuestas</h2>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="Create" class="btn btn-success">➕ Nueva Respuesta</a>
 </p>
-<table class="table">
-    <thead>
+
+<table class="table table-bordered table-striped table-hover">
+
+    <thead class="table-dark">
         <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.EmbarqueId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.PreguntaId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ValorTexto)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ValorNumero)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ValorFecha)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ValorListaId)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.FechaRegistro)
-            </th>
-            <th></th>
+            <th>Embarque</th>
+            <th>Pregunta</th>
+            <th>Valor</th>
+            <th>Fecha Registro</th>
+            <th>Acciones</th>
         </tr>
     </thead>
+
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.EmbarqueId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.PreguntaId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ValorTexto)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ValorNumero)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ValorFecha)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ValorListaId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.FechaRegistro)
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
-}
+
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.EmbarqueId</td>
+
+                <td>
+                    @(item.Pregunta != null
+                        ? item.Pregunta.Nombre
+                        : item.PreguntaId.ToString())
+                </td>
+
+                <td>@(item.Valor ?? "-")</td>
+
+                <td>
+                    @(item.FechaRegistro.HasValue
+                        ? item.FechaRegistro.Value.ToString("dd/MM/yyyy")
+                        : "-")
+                </td>
+
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-primary">✏️</a>
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info text-white">🔍</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">🗑️</a>
+                </td>
+            </tr>
+        }
+
     </tbody>
+
 </table>

@@ -1,48 +1,152 @@
 ﻿@model Seguimiento.Models.Pregunta
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Crear Pregunta";
 }
 
-<h1>Create</h1>
+<style>
 
-<h4>Pregunta</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .btn-lozano {
+        background: #f05a28;
+        border: none;
+        color: white;
+        font-weight: 500;
+    }
+
+        .btn-lozano:hover {
+            background: #d84c1b;
+            color: white;
+        }
+
+    .card-form {
+        background: white;
+        border-radius: 12px;
+        padding: 35px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        max-width: 700px;
+        margin: auto;
+    }
+
+    .section-title {
+        font-weight: 600;
+        margin-bottom: 20px;
+        color: #2c3e50;
+        border-left: 4px solid #f05a28;
+        padding-left: 10px;
+    }
+
+    .btn-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 25px;
+    }
+
+</style>
+
+<div class="container mt-4">
+
+    <div class="page-header">
+
+        <h3>❓ Crear Pregunta</h3>
+
+        <a asp-action="Index" class="btn btn-secondary">
+            ← Volver
+        </a>
+
+    </div>
+
+    <div class="card-form">
+
+        <form asp-action="Create" method="post">
+
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Nombre" class="control-label"></label>
+
+            <div class="section-title">
+                Configuración de la pregunta
+            </div>
+
+            <!-- NOMBRE -->
+            <div class="mb-3">
+                <label class="form-label">Texto de la Pregunta</label>
                 <input asp-for="Nombre" class="form-control" />
                 <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="TipoCampoId" class="control-label"></label>
-                <input asp-for="TipoCampoId" class="form-control" />
-                <span asp-validation-for="TipoCampoId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Orden" class="control-label"></label>
-                <input asp-for="Orden" class="form-control" />
-                <span asp-validation-for="Orden" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Activo" /> @Html.DisplayNameFor(model => model.Activo)
-                </label>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
-    </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
+            
+
+            <!-- ORDEN -->
+            <div class="mb-3">
+                <label class="form-label">Orden</label>
+                <input asp-for="Orden" type="number" class="form-control" />
+            </div>
+
+            <!-- ACTIVO -->
+            <div class="form-check mt-2">
+                <input asp-for="Activo" class="form-check-input" />
+                <label class="form-check-label">Activo</label>
+            </div>
+
+            <!-- ES GENERAL -->
+            <div class="form-check mt-2">
+                <input asp-for="EsGeneral" class="form-check-input" id="chkGeneral" />
+                <label class="form-check-label">Pregunta General</label>
+            </div>
+
+            <!-- MODELO -->
+            <div class="mb-3 mt-3" id="divModelo">
+                <label class="form-label">Modelo</label>
+                <select asp-for="ModeloId"
+                        class="form-control"
+                        asp-items="ViewBag.Modelos">
+                    <option value="">Seleccione un modelo</option>
+                </select>
+            </div>
+
+            <div class="btn-actions">
+
+                <button type="submit" class="btn btn-lozano">
+                    💾 Guardar Pregunta
+                </button>
+
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    Cancelar
+                </a>
+
+            </div>
+
+        </form>
+
+    </div>
+
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        function toggleModelo() {
+            let esGeneral = document.getElementById("chkGeneral").checked;
+            let divModelo = document.getElementById("divModelo");
+
+            if (esGeneral) {
+                divModelo.style.display = "none";
+            } else {
+                divModelo.style.display = "block";
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            toggleModelo();
+            document.getElementById("chkGeneral").addEventListener("change", toggleModelo);
+        });
+    </script>
 }

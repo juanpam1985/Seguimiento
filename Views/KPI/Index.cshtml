@@ -1,0 +1,251 @@
+﻿@{
+    ViewData["Title"] = "KPI Gerencial";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    body {
+        background: #f4f6fb;
+    }
+
+    .kpi-card {
+        border-radius: 14px;
+        padding: 25px;
+        color: white;
+        text-align: center;
+        font-weight: 600;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        transition: 0.2s;
+    }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .kpi-card h1 {
+            font-size: 32px;
+            margin: 0;
+        }
+
+        .kpi-card p {
+            margin: 5px 0 0 0;
+            font-size: 13px;
+        }
+
+    .verde {
+        background: #16a34a;
+    }
+
+    .rojo {
+        background: #dc2626;
+    }
+
+    .amarillo {
+        background: #f59e0b;
+    }
+
+    .azul {
+        background: #2563eb;
+    }
+
+    .gris {
+        background: #374151;
+    }
+
+    .card-box {
+        background: white;
+        border-radius: 14px;
+        padding: 20px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        margin-top: 20px;
+    }
+
+    .table thead {
+        background: #111827;
+        color: white;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <h3>📊 KPI Gerencial Embarques</h3>
+
+    <small style="color:#6b7280;">
+        Última actualización: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+    </small>
+
+    <!-- 🔍 FILTRO -->
+    <form method="get" class="row g-2 mt-3 mb-4">
+
+        <div class="col-md-3">
+            <label>Fecha Inicio</label>
+            <input type="date" name="fechaInicio" value="@ViewBag.FechaInicio" class="form-control" />
+        </div>
+
+        <div class="col-md-3">
+            <label>Fecha Fin</label>
+            <input type="date" name="fechaFin" value="@ViewBag.FechaFin" class="form-control" />
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                🔍 Filtrar
+            </button>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <a asp-action="Index" class="btn btn-secondary w-100">
+                🔄 Limpiar
+            </a>
+        </div>
+
+    </form>
+
+    @if (ViewBag.Total == 0)
+    {
+        <div class="alert alert-info">
+            📭 No existen embarques registrados en este rango
+        </div>
+    }
+    else
+    {
+        string colorOTIF = ViewBag.OTIF >= 90 ? "verde" :
+        ViewBag.OTIF >= 80 ? "amarillo" : "rojo";
+
+        <!-- KPI PRINCIPALES -->
+        <div class="row g-3">
+
+            <div class="col-md-3">
+                <div class="kpi-card azul">
+                    <h1>@ViewBag.Total</h1>
+                    <p>Total Embarques</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="kpi-card @colorOTIF">
+                    <h1>@ViewBag.OTIF %</h1>
+                    <p>OTIF</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="kpi-card amarillo">
+                    <h1>@ViewBag.EnTransito</h1>
+                    <p>En tránsito</p>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="kpi-card rojo">
+                    <h1>@ViewBag.Retrasados</h1>
+                    <p>Retrasados</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- KPI STATUS -->
+        <div class="row g-3 mt-2">
+
+            <div class="col-md-6">
+                <div class="kpi-card azul">
+                    <h1>@ViewBag.Abiertos</h1>
+                    <p>Embarques Abiertos</p>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="kpi-card gris">
+                    <h1>@ViewBag.Cerrados</h1>
+                    <p>Embarques Cerrados</p>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ALERTAS -->
+        @if (ViewBag.Retrasados > 0)
+        {
+            <div class="alert alert-danger mt-4">
+                🚨 Hay @ViewBag.Retrasados embarques retrasados
+            </div>
+        }
+
+        <!-- GRÁFICO -->
+        @if (ViewBag.Marcas != null && ViewBag.Marcas.Count > 0)
+        {
+            <div class="card-box mt-4">
+                <h5>📊 Retrasos por Marca</h5>
+                <canvas id="graficoMarcas"></canvas>
+            </div>
+
+            <script>
+                var ctx = document.getElementById('graficoMarcas');
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(ViewBag.Marcas)),
+                        datasets: [{
+                            label: 'Retrasos',
+                            data: @Html.Raw(Json.Serialize(ViewBag.MarcasValores)),
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            </script>
+        }
+
+        <!-- RANKING -->
+        @if (ViewBag.Ranking != null)
+        {
+            <div class="card-box">
+
+                <h5>🏆 Ranking de Marcas</h5>
+
+                <table class="table table-bordered table-sm mt-3">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Marca</th>
+                            <th>Total</th>
+                            <th>Retrasos</th>
+                            <th>OTIF</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int pos = 1;
+                        }
+
+                        @foreach (var r in ViewBag.Ranking)
+                        {
+                            string color = r.OTIF >= 90 ? "text-success" :
+                            r.OTIF >= 80 ? "text-warning" : "text-danger";
+
+                            <tr>
+                                <td>@pos</td>
+                                <td>@r.Marca</td>
+                                <td>@r.Total</td>
+                                <td>@r.Retrasos</td>
+                                <td class="@color">
+                                    <strong>@Math.Round(r.OTIF, 1)%</strong>
+                                </td>
+                            </tr>
+
+                            pos++;
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        }
+    }
+
+</div>

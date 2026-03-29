@@ -1,36 +1,122 @@
 ﻿@model Seguimiento.Models.Modelo
 
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Detalle Modelo";
 }
 
-<h1>Details</h1>
+<style>
 
-<div>
-    <h4>Modelo</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Nombre)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Nombre)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Activo)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Activo)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Marca)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Marca.Id)
-        </dd>
-    </dl>
-</div>
-<div>
-    <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> |
-    <a asp-action="Index">Back to List</a>
+    .details-container {
+        max-width: 650px;
+        margin: auto;
+    }
+
+    .card-details {
+        background: white;
+        border-radius: 12px;
+        padding: 35px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .title-details {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 20px;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .info-value {
+        background: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 6px;
+        display: inline-block;
+        min-width: 200px;
+    }
+
+    .badge-activo {
+        background: #e8f5e9;
+        color: #2e7d32;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+
+    .badge-inactivo {
+        background: #ffebee;
+        color: #c62828;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-weight: 500;
+    }
+
+    .btn-actions {
+        margin-top: 25px;
+        display: flex;
+        gap: 10px;
+    }
+
+</style>
+
+<div class="container mt-4 details-container">
+
+    <div class="card-details">
+
+        <h3 class="title-details">📋 Detalle del Modelo</h3>
+
+        <!-- MARCA -->
+        <div class="mb-3">
+            <span class="info-label">Marca:</span><br />
+            <span class="info-value">
+                @(Model.Marca != null ? Model.Marca.Nombre : "Sin marca")
+            </span>
+        </div>
+
+        <!-- 🔥 TIPO MODELO (NUEVO) -->
+        <div class="mb-3">
+            <span class="info-label">Tipo de Modelo:</span><br />
+            <span class="info-value">
+                @(Model.TipoModelo != null ? Model.TipoModelo.Nombre : "Sin tipo")
+            </span>
+        </div>
+
+        <!-- NOMBRE -->
+        <div class="mb-3">
+            <span class="info-label">Nombre del Modelo:</span><br />
+            <span class="info-value">
+                @Model.Nombre
+            </span>
+        </div>
+
+        <!-- ESTADO -->
+        <div class="mb-3">
+            <span class="info-label">Estado:</span><br />
+            @if (Model.Activo)
+            {
+                <span class="badge-activo">Activo</span>
+            }
+            else
+            {
+                <span class="badge-inactivo">Inactivo</span>
+            }
+        </div>
+
+        <!-- BOTONES -->
+        <div class="btn-actions">
+
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">
+                ✏️ Editar
+            </a>
+
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                ← Volver
+            </a>
+
+        </div>
+
+    </div>
+
 </div>

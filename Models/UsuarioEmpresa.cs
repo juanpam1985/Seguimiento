@@ -10,7 +10,7 @@ namespace Seguimiento.Models
         public int UsuarioId { get; set; }
         public Usuario Usuario { get; set; }
 
-        public int EmpresaId { get; set; }
+        public int EmpresaId { get; set; } // 🔥 ESTA LÍNEA FALTABA
         public Empresa Empresa { get; set; }
     }
 }

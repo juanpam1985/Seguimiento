@@ -23,8 +23,7 @@
             align-items: center;
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            /* IMAGEN DE FONDO */
-            background-image: url('/images/fondo.png');
+            background-image: url('@Url.Content("~/images/fondo.png")');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -99,6 +98,12 @@
         <div class="system-title">
             Sistema de Seguimiento de Embarques
         </div>
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger text-center fw-bold">
+                @ViewBag.Error
+            </div>
+        }
 
         <form asp-controller="Account" asp-action="Login" method="post">
 
@@ -123,7 +128,7 @@
         </form>
 
         <div class="footer">
-            Lozano Asesores © 2026
+            Lozano Asesores © 2026    By moraleSoftware
         </div>
 
     </div>

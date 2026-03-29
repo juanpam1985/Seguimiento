@@ -19,68 +19,78 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
-        // =====================================================
-        // LISTADO
-        // =====================================================
+        // ============================
+        // CARGAR PREGUNTAS
+        // ============================
+        private void CargarPreguntas(object selected = null)
+        {
+            ViewBag.PreguntaId = _context.Preguntas
+                .Where(p => p.Activo)
+                .OrderBy(p => p.Orden)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Id.ToString(),              // 🔥 SE GUARDA
+                    Text = p.Id + " - " + p.Nombre        // 🔥 SE MUESTRA
+                })
+                .ToList();
+        }
 
+        // ============================
+        // INDEX
+        // ============================
         public async Task<IActionResult> Index()
         {
             var lista = _context.OpcionesLista
                 .Include(o => o.Pregunta)
-                .OrderBy(o => o.PreguntaId)
+                .OrderBy(o => o.Pregunta.Orden)
                 .ThenBy(o => o.Orden);
 
             return View(await lista.ToListAsync());
         }
 
-        // =====================================================
-        // DETAILS
-        // =====================================================
-
-        public async Task<IActionResult> Details(int? id)
-        {
-            if (id == null)
-                return NotFound();
-
-            var opcionLista = await _context.OpcionesLista
-                .Include(o => o.Pregunta)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (opcionLista == null)
-                return NotFound();
-
-            return View(opcionLista);
-        }
-
-        // =====================================================
-        // CREATE
-        // =====================================================
-
+        // ============================
+        // CREATE GET
+        // ============================
         public IActionResult Create()
         {
-            ViewData["PreguntaId"] = new SelectList(_context.Preguntas, "Id", "Nombre");
+            CargarPreguntas();
             return View();
         }
 
+        // ============================
+        // CREATE POST (ÚNICO)
+        // ============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,PreguntaId,Valor,Orden,Activo")] OpcionLista opcionLista)
+        public async Task<IActionResult> Create(OpcionLista opcionLista)
         {
-            if (ModelState.IsValid)
+            // 🔥 CLAVE
+            ModelState.Remove("Pregunta");
+
+            if (opcionLista.PreguntaId == null)
             {
-                _context.Add(opcionLista);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                ModelState.AddModelError("PreguntaId", "Seleccione una pregunta");
             }
 
-            ViewData["PreguntaId"] = new SelectList(_context.Preguntas, "Id", "Nombre", opcionLista.PreguntaId);
-            return View(opcionLista);
+            if (string.IsNullOrWhiteSpace(opcionLista.Valor))
+            {
+                ModelState.AddModelError("Valor", "Ingrese un valor");
+            }
+
+            if (!ModelState.IsValid)
+            {
+                CargarPreguntas(opcionLista.PreguntaId);
+                return View(opcionLista);
+            }
+
+            _context.OpcionesLista.Add(opcionLista);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
         }
-
-        // =====================================================
+        // ============================
         // EDIT
-        // =====================================================
-
+        // ============================
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -91,44 +101,37 @@ namespace Seguimiento.Controllers
             if (opcionLista == null)
                 return NotFound();
 
-            ViewData["PreguntaId"] = new SelectList(_context.Preguntas, "Id", "Nombre", opcionLista.PreguntaId);
-
+            CargarPreguntas(opcionLista.PreguntaId);
             return View(opcionLista);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,PreguntaId,Valor,Orden,Activo")] OpcionLista opcionLista)
+        public async Task<IActionResult> Edit(int id, OpcionLista opcionLista)
         {
             if (id != opcionLista.Id)
                 return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                try
-                {
-                    _context.Update(opcionLista);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!OpcionListaExists(opcionLista.Id))
-                        return NotFound();
-                    else
-                        throw;
-                }
+                opcionLista.Activo = Request.Form["Activo"] == "true";
+
+                _context.Update(opcionLista);
+                await _context.SaveChangesAsync();
 
                 return RedirectToAction(nameof(Index));
             }
-
-            ViewData["PreguntaId"] = new SelectList(_context.Preguntas, "Id", "Nombre", opcionLista.PreguntaId);
-            return View(opcionLista);
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: " + ex.Message);
+                CargarPreguntas(opcionLista.PreguntaId);
+                return View(opcionLista);
+            }
         }
 
-        // =====================================================
+        // ============================
         // DELETE
-        // =====================================================
-
+        // ============================
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -156,15 +159,6 @@ namespace Seguimiento.Controllers
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
-        }
-
-        // =====================================================
-        // EXISTE
-        // =====================================================
-
-        private bool OpcionListaExists(int id)
-        {
-            return _context.OpcionesLista.Any(e => e.Id == id);
         }
     }
 }

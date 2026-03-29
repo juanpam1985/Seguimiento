@@ -1,63 +1,35 @@
 ﻿@model Seguimiento.Models.Respuesta
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Nueva Respuesta";
 }
 
-<h1>Create</h1>
+<h2>➕ Nueva Respuesta</h2>
 
-<h4>Respuesta</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="EmbarqueId" class="control-label"></label>
-                <input asp-for="EmbarqueId" class="form-control" />
-                <span asp-validation-for="EmbarqueId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PreguntaId" class="control-label"></label>
-                <input asp-for="PreguntaId" class="form-control" />
-                <span asp-validation-for="PreguntaId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ValorTexto" class="control-label"></label>
-                <input asp-for="ValorTexto" class="form-control" />
-                <span asp-validation-for="ValorTexto" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ValorNumero" class="control-label"></label>
-                <input asp-for="ValorNumero" class="form-control" />
-                <span asp-validation-for="ValorNumero" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ValorFecha" class="control-label"></label>
-                <input asp-for="ValorFecha" class="form-control" />
-                <span asp-validation-for="ValorFecha" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ValorListaId" class="control-label"></label>
-                <input asp-for="ValorListaId" class="form-control" />
-                <span asp-validation-for="ValorListaId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="FechaRegistro" class="control-label"></label>
-                <input asp-for="FechaRegistro" class="form-control" />
-                <span asp-validation-for="FechaRegistro" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+<form asp-action="Create">
+
+    <div class="form-group">
+        <label>Embarque</label>
+        <input asp-for="EmbarqueId" class="form-control" />
     </div>
-</div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
+    <div class="form-group">
+        <label>Pregunta</label>
+        <input asp-for="PreguntaId" class="form-control" />
+    </div>
 
-@section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-}
+    <div class="form-group">
+        <label>Valor</label>
+        <input asp-for="Valor" class="form-control" />
+    </div>
+
+    <div class="form-group">
+        <label>Fecha</label>
+        <input asp-for="FechaRegistro" type="date" class="form-control" />
+    </div>
+
+    <br />
+
+    <button type="submit" class="btn btn-success">Guardar</button>
+
+</form>
