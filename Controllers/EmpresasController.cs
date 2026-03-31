@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Seguimiento.Data;
 using Seguimiento.Models;
+using Seguimiento.Helpers;
 
 namespace Seguimiento.Controllers
 {
@@ -19,26 +20,44 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
+        private int? RolIdSesion()
+        {
+            return HttpContext.Session.GetInt32("RolId");
+        }
+
+        private bool Puede(string accion)
+        {
+            return PermisoHelper.TienePermiso(_context, RolIdSesion(), "EMPRESAS", accion);
+        }
+
         // GET: Empresas
         public async Task<IActionResult> Index()
         {
-            return View(await _context.Empresas.ToListAsync());
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
+            var empresas = await _context.Empresas
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View(empresas);
         }
 
         // GET: Empresas/Details/5
         public async Task<IActionResult> Details(int? id)
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var empresa = await _context.Empresas
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (empresa == null)
-            {
                 return NotFound();
-            }
 
             return View(empresa);
         }
@@ -46,52 +65,59 @@ namespace Seguimiento.Controllers
         // GET: Empresas/Create
         public IActionResult Create()
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             return View();
         }
 
         // POST: Empresas/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Nombre,Activo")] Empresa empresa)
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             if (ModelState.IsValid)
             {
                 _context.Add(empresa);
                 await _context.SaveChangesAsync();
+
+                TempData["OK"] = "Empresa creada correctamente.";
                 return RedirectToAction(nameof(Index));
             }
+
             return View(empresa);
         }
 
         // GET: Empresas/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var empresa = await _context.Empresas.FindAsync(id);
+
             if (empresa == null)
-            {
                 return NotFound();
-            }
+
             return View(empresa);
         }
 
         // POST: Empresas/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Nombre,Activo")] Empresa empresa)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id != empresa.Id)
-            {
                 return NotFound();
-            }
 
             if (ModelState.IsValid)
             {
@@ -99,6 +125,8 @@ namespace Seguimiento.Controllers
                 {
                     _context.Update(empresa);
                     await _context.SaveChangesAsync();
+
+                    TempData["OK"] = "Empresa actualizada correctamente.";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -111,25 +139,28 @@ namespace Seguimiento.Controllers
                         throw;
                     }
                 }
+
                 return RedirectToAction(nameof(Index));
             }
+
             return View(empresa);
         }
 
         // GET: Empresas/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
-            {
                 return NotFound();
-            }
 
             var empresa = await _context.Empresas
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (empresa == null)
-            {
                 return NotFound();
-            }
 
             return View(empresa);
         }
@@ -139,13 +170,19 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             var empresa = await _context.Empresas.FindAsync(id);
+
             if (empresa != null)
             {
                 _context.Empresas.Remove(empresa);
+                await _context.SaveChangesAsync();
+
+                TempData["OK"] = "Empresa eliminada correctamente.";
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 

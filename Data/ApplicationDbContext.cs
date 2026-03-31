@@ -12,24 +12,22 @@ namespace Seguimiento.Data
 
         public DbSet<Empresa> Empresas { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
-
-
         public DbSet<Marca> Marcas { get; set; }
         public DbSet<Modelo> Modelos { get; set; }
-
         public DbSet<Pregunta> Preguntas { get; set; }
         public DbSet<TipoModelo> TipoModelo { get; set; }
         public DbSet<OpcionLista> OpcionesLista { get; set; }
-
         public DbSet<Embarque> Embarques { get; set; }
         public DbSet<Respuesta> Respuestas { get; set; }
         public DbSet<UsuarioEmpresa> UsuarioEmpresas { get; set; }
         public DbSet<EmbarqueModelo> EmbarqueModelos { get; set; }
-
         public DbSet<AuditoriaEmbarque> AuditoriaEmbarques { get; set; }
-        // RELACIONES
         public DbSet<MarcaEmpresa> MarcaEmpresas { get; set; }
         public DbSet<Rol> Roles { get; set; }
+
+        // NUEVO
+        public DbSet<Modulo> Modulos { get; set; }
+        public DbSet<RolPermiso> RolPermisos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -47,6 +45,22 @@ namespace Seguimiento.Data
                 .HasOne(me => me.Empresa)
                 .WithMany(e => e.MarcaEmpresas)
                 .HasForeignKey(me => me.EmpresaId);
+
+            modelBuilder.Entity<RolPermiso>()
+                .HasOne(rp => rp.Rol)
+                .WithMany(r => r.RolPermisos)
+                .HasForeignKey(rp => rp.RolId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RolPermiso>()
+                .HasOne(rp => rp.Modulo)
+                .WithMany(m => m.RolPermisos)
+                .HasForeignKey(rp => rp.ModuloId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<RolPermiso>()
+                .HasIndex(rp => new { rp.RolId, rp.ModuloId })
+                .IsUnique();
         }
     }
 }

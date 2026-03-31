@@ -13,88 +13,84 @@
     <h3>✏️ Editar Usuario</h3>
 
     <form asp-action="Edit" method="post">
-
         @Html.AntiForgeryToken()
 
         <input type="hidden" asp-for="Id" />
 
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
         <div class="row">
 
             <div class="col-md-6">
-                <label asp-for="Nombre"></label>
+                <label asp-for="Nombre" class="form-label"></label>
                 <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
 
             <div class="col-md-6">
-                <label asp-for="UsuarioLogin"></label>
+                <label asp-for="UsuarioLogin" class="form-label"></label>
                 <input asp-for="UsuarioLogin" class="form-control" />
+                <span asp-validation-for="UsuarioLogin" class="text-danger"></span>
             </div>
 
             <div class="col-md-6 mt-2">
-                <label asp-for="Email"></label>
+                <label asp-for="Email" class="form-label"></label>
                 <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
             <div class="col-md-6 mt-2">
-                <label>Nueva Contraseña</label>
+                <label class="form-label">Nueva Contraseña</label>
                 <input type="password" name="NuevaPassword" class="form-control" />
-                <small class="text-muted">Dejar en blanco si no desea cambiarla</small>
+                <small class="text-muted">Dejar en blanco si no desea cambiar la contraseña</small>
             </div>
 
-            <!-- 🔥 ROL -->
             <div class="col-md-6 mt-2">
-                <label>Rol</label>
+                <label asp-for="RolId" class="form-label">Rol</label>
                 <select asp-for="RolId" class="form-control">
-
                     <option value="">-- Seleccione Rol --</option>
-
                     @foreach (var rol in roles)
                     {
-                        <option value="@rol.Id" selected="@(rol.Id == Model.RolId)">
-                            @rol.Nombre
-                        </option>
+                        if (rol.Id == Model.RolId)
+                        {
+                            <option value="@rol.Id" selected>@rol.Nombre</option>
+                        }
+                        else
+                        {
+                            <option value="@rol.Id">@rol.Nombre</option>
+                        }
                     }
-
                 </select>
+                <span asp-validation-for="RolId" class="text-danger"></span>
             </div>
 
         </div>
 
         <div class="form-check mt-3">
             <input asp-for="Activo" class="form-check-input" />
-            <label asp-for="Activo"></label>
+            <label asp-for="Activo" class="form-check-label"></label>
         </div>
 
         <hr />
 
         <h5>Empresas asignadas</h5>
 
-        <!-- 🔥 ESTE HIDDEN EVITA ERRORES CUANDO NO MARCAN NADA -->
-        <input type="hidden" name="empresasSeleccionadas" value="0" />
-
         <div class="row">
-
             @foreach (var emp in empresas)
             {
                 var isChecked = seleccionadas.Contains(emp.Id);
 
                 <div class="col-md-6">
-
                     <div class="form-check">
-
                         <input type="checkbox"
                                name="empresasSeleccionadas"
                                value="@emp.Id"
                                class="form-check-input"
                         @(isChecked ? "checked" : null) />
-
                         <label class="form-check-label">@emp.Nombre</label>
-
                     </div>
-
                 </div>
             }
-
         </div>
 
         <br />
@@ -104,7 +100,12 @@
         </button>
 
         <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
-
     </form>
 
 </div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

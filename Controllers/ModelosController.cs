@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Seguimiento.Data;
 using Seguimiento.Models;
+using Seguimiento.Helpers;
 
 namespace Seguimiento.Controllers
 {
@@ -19,14 +21,28 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
+        private int? RolIdSesion()
+        {
+            return HttpContext.Session.GetInt32("RolId");
+        }
+
+        private bool Puede(string accion)
+        {
+            return PermisoHelper.TienePermiso(_context, RolIdSesion(), "MODELOS", accion);
+        }
+
         // ===============================
         // INDEX
         // ===============================
         public IActionResult Index()
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             var modelos = _context.Modelos
+                .AsNoTracking()
                 .Include(m => m.Marca)
-                .Include(m => m.TipoModelo) // 🔥 NUEVO
+                .Include(m => m.TipoModelo)
                 .ToList();
 
             return View(modelos);
@@ -37,12 +53,16 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Details(int? id)
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             if (id == null)
                 return NotFound();
 
             var modelo = await _context.Modelos
+                .AsNoTracking()
                 .Include(m => m.Marca)
-                .Include(m => m.TipoModelo) // 🔥 NUEVO
+                .Include(m => m.TipoModelo)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (modelo == null)
@@ -56,8 +76,11 @@ namespace Seguimiento.Controllers
         // ===============================
         public IActionResult Create()
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             CargarMarcas();
-            CargarTiposModelo(); // 🔥 NUEVO
+            CargarTiposModelo();
             return View();
         }
 
@@ -68,6 +91,9 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             if (modelo.MarcaId == 0)
                 ModelState.AddModelError("MarcaId", "Debe seleccionar una marca");
 
@@ -89,6 +115,7 @@ namespace Seguimiento.Controllers
                 _context.Modelos.Add(modelo);
                 await _context.SaveChangesAsync();
 
+                TempData["OK"] = "Modelo creado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
@@ -106,6 +133,9 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
                 return NotFound();
 
@@ -127,8 +157,20 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id != modelo.Id)
                 return NotFound();
+
+            if (modelo.MarcaId == 0)
+                ModelState.AddModelError("MarcaId", "Debe seleccionar una marca");
+
+            if (modelo.TipoModeloId == null)
+                ModelState.AddModelError("TipoModeloId", "Debe seleccionar un tipo");
+
+            if (string.IsNullOrWhiteSpace(modelo.Nombre))
+                ModelState.AddModelError("Nombre", "El nombre es obligatorio");
 
             if (ModelState.IsValid)
             {
@@ -136,6 +178,9 @@ namespace Seguimiento.Controllers
                 {
                     _context.Update(modelo);
                     await _context.SaveChangesAsync();
+
+                    TempData["OK"] = "Modelo actualizado correctamente.";
+                    return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -144,8 +189,6 @@ namespace Seguimiento.Controllers
                     else
                         throw;
                 }
-
-                return RedirectToAction(nameof(Index));
             }
 
             CargarMarcas(modelo.MarcaId);
@@ -160,7 +203,11 @@ namespace Seguimiento.Controllers
         [HttpGet]
         public IActionResult ObtenerPorMarca(int marcaId)
         {
+            if (!Puede("VER"))
+                return Json(new List<object>());
+
             var modelos = _context.Modelos
+                .AsNoTracking()
                 .Where(m => m.MarcaId == marcaId && m.Activo)
                 .Select(m => new
                 {
@@ -178,12 +225,16 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
                 return NotFound();
 
             var modelo = await _context.Modelos
+                .AsNoTracking()
                 .Include(m => m.Marca)
-                .Include(m => m.TipoModelo) // 🔥 NUEVO
+                .Include(m => m.TipoModelo)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (modelo == null)
@@ -199,6 +250,9 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             var modelo = await _context.Modelos.FindAsync(id);
 
             if (modelo != null)
@@ -206,6 +260,7 @@ namespace Seguimiento.Controllers
 
             await _context.SaveChangesAsync();
 
+            TempData["OK"] = "Modelo eliminado correctamente.";
             return RedirectToAction(nameof(Index));
         }
 

@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Seguimiento.Data;
 using Seguimiento.Models;
+using Seguimiento.Helpers;
 
 namespace Seguimiento.Controllers
 {
@@ -18,12 +20,26 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
+        private int? RolIdSesion()
+        {
+            return HttpContext.Session.GetInt32("RolId");
+        }
+
+        private bool Puede(string accion)
+        {
+            return PermisoHelper.TienePermiso(_context, RolIdSesion(), "MARCAS", accion);
+        }
+
         // ===============================
         // LISTADO DE MARCAS
         // ===============================
         public async Task<IActionResult> Index()
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             var marcas = _context.Marcas
+                .AsNoTracking()
                 .Include(m => m.MarcaEmpresas)
                 .ThenInclude(me => me.Empresa);
 
@@ -35,10 +51,14 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Details(int? id)
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             if (id == null)
                 return NotFound();
 
             var marca = await _context.Marcas
+                .AsNoTracking()
                 .Include(m => m.MarcaEmpresas)
                 .ThenInclude(me => me.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -54,7 +74,11 @@ namespace Seguimiento.Controllers
         // ===============================
         public IActionResult Create()
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             ViewBag.Empresas = _context.Empresas
+                .AsNoTracking()
                 .Where(x => x.Activo)
                 .ToList();
 
@@ -68,7 +92,19 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Marca marca, List<int> empresasSeleccionadas)
         {
-            // 🔍 VALIDAR DUPLICADO (marca + empresa)
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
+            empresasSeleccionadas = empresasSeleccionadas?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if (!empresasSeleccionadas.Any())
+            {
+                ModelState.AddModelError("", "Debe seleccionar al menos una empresa.");
+            }
+
             foreach (var empresaId in empresasSeleccionadas)
             {
                 bool existe = await _context.MarcaEmpresas.AnyAsync(me =>
@@ -88,7 +124,6 @@ namespace Seguimiento.Controllers
                 _context.Marcas.Add(marca);
                 await _context.SaveChangesAsync();
 
-                // 🔥 GUARDAR RELACIONES
                 foreach (var empresaId in empresasSeleccionadas)
                 {
                     _context.MarcaEmpresas.Add(new MarcaEmpresa
@@ -100,10 +135,17 @@ namespace Seguimiento.Controllers
 
                 await _context.SaveChangesAsync();
 
+                TempData["OK"] = "Marca creada correctamente.";
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Empresas = _context.Empresas.Where(x => x.Activo).ToList();
+            ViewBag.Empresas = _context.Empresas
+                .AsNoTracking()
+                .Where(x => x.Activo)
+                .ToList();
+
+            ViewBag.EmpresasSeleccionadas = empresasSeleccionadas;
+
             return View(marca);
         }
 
@@ -112,6 +154,9 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
                 return NotFound();
 
@@ -122,7 +167,10 @@ namespace Seguimiento.Controllers
             if (marca == null)
                 return NotFound();
 
-            ViewBag.Empresas = _context.Empresas.Where(x => x.Activo).ToList();
+            ViewBag.Empresas = await _context.Empresas
+                .AsNoTracking()
+                .Where(x => x.Activo)
+                .ToListAsync();
 
             ViewBag.EmpresasSeleccionadas = marca.MarcaEmpresas
                 .Select(me => me.EmpresaId)
@@ -138,10 +186,22 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Marca marca, List<int> empresasSeleccionadas)
         {
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id != marca.Id)
                 return NotFound();
 
-            // 🔍 VALIDAR DUPLICADO
+            empresasSeleccionadas = empresasSeleccionadas?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
+
+            if (!empresasSeleccionadas.Any())
+            {
+                ModelState.AddModelError("", "Debe seleccionar al menos una empresa.");
+            }
+
             foreach (var empresaId in empresasSeleccionadas)
             {
                 bool existe = await _context.MarcaEmpresas.AnyAsync(me =>
@@ -159,29 +219,45 @@ namespace Seguimiento.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Update(marca);
-                await _context.SaveChangesAsync();
-
-                // 🔥 ELIMINAR RELACIONES
-                var relaciones = _context.MarcaEmpresas.Where(x => x.MarcaId == id);
-                _context.MarcaEmpresas.RemoveRange(relaciones);
-
-                // 🔥 INSERTAR NUEVAS
-                foreach (var empresaId in empresasSeleccionadas)
+                try
                 {
-                    _context.MarcaEmpresas.Add(new MarcaEmpresa
+                    _context.Update(marca);
+                    await _context.SaveChangesAsync();
+
+                    var relaciones = _context.MarcaEmpresas.Where(x => x.MarcaId == id);
+                    _context.MarcaEmpresas.RemoveRange(relaciones);
+                    await _context.SaveChangesAsync();
+
+                    foreach (var empresaId in empresasSeleccionadas)
                     {
-                        MarcaId = marca.Id,
-                        EmpresaId = empresaId
-                    });
+                        _context.MarcaEmpresas.Add(new MarcaEmpresa
+                        {
+                            MarcaId = marca.Id,
+                            EmpresaId = empresaId
+                        });
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    TempData["OK"] = "Marca actualizada correctamente.";
+                    return RedirectToAction(nameof(Index));
                 }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!MarcaExists(marca.Id))
+                        return NotFound();
 
-                await _context.SaveChangesAsync();
-
-                return RedirectToAction(nameof(Index));
+                    throw;
+                }
             }
 
-            ViewBag.Empresas = _context.Empresas.Where(x => x.Activo).ToList();
+            ViewBag.Empresas = await _context.Empresas
+                .AsNoTracking()
+                .Where(x => x.Activo)
+                .ToListAsync();
+
+            ViewBag.EmpresasSeleccionadas = empresasSeleccionadas;
+
             return View(marca);
         }
 
@@ -190,10 +266,14 @@ namespace Seguimiento.Controllers
         // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             if (id == null)
                 return NotFound();
 
             var marca = await _context.Marcas
+                .AsNoTracking()
                 .Include(m => m.MarcaEmpresas)
                 .ThenInclude(me => me.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
@@ -211,6 +291,12 @@ namespace Seguimiento.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
+            var relaciones = _context.MarcaEmpresas.Where(x => x.MarcaId == id);
+            _context.MarcaEmpresas.RemoveRange(relaciones);
+
             var marca = await _context.Marcas.FindAsync(id);
 
             if (marca != null)
@@ -218,6 +304,7 @@ namespace Seguimiento.Controllers
 
             await _context.SaveChangesAsync();
 
+            TempData["OK"] = "Marca eliminada correctamente.";
             return RedirectToAction(nameof(Index));
         }
 

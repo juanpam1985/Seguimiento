@@ -29,7 +29,10 @@
 
     var indexQty = preguntas.FindIndex(p => p.Nombre.Trim().ToUpper() == "QTY");
 
-    var indicesFecha = new List<int> { 7, 8, 13, 14, 17, 18, 19, 25, 26, 28, 29, 30, 31, 32 };
+    // 🔥 CAMPOS FECHA POR POSICIÓN
+    // Visible 30 = i 29
+    // Visible 31 = i 30
+    var indicesFecha = new List<int> { 7, 8, 13, 14, 17, 18, 19, 25, 26, 28, 29, 30, 32, 33, 34, 35 };
 }
 
 <style>
@@ -54,16 +57,18 @@
             align-items: center;
             justify-content: center;
         }
-    /* 🎨 COLORES SUAVES (NO CHILLONES) */
+
+    /* 🎨 COLORES SUAVES */
     .bg-soft-danger {
-        background-color: #f8d7da !important; /* rojo suave */
+        background-color: #f8d7da !important;
         color: #842029 !important;
     }
 
     .bg-soft-success {
-        background-color: #d1e7dd !important; /* verde suave */
+        background-color: #d1e7dd !important;
         color: #0f5132 !important;
     }
+
     .table-responsive {
         overflow-x: auto;
     }
@@ -104,9 +109,10 @@
 
         <input type="hidden" id="departureConfirmado" name="departureConfirmado" value="@Model.DepartureConfirmado.ToString().ToLower()" />
         <input type="hidden" id="etaConfirmado" name="etaConfirmado" value="@Model.EtaConfirmado.ToString().ToLower()" />
+
         @if (esEdicion)
         {
-            <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="id" value="@Model.Id" />
         }
 
         <div class="table-responsive">
@@ -118,7 +124,7 @@
                     <tr class="table-dark text-center" id="headerTipos">
                         @for (int i = 0; i < preguntas.Count; i++)
                         {
-                            <th rowspan="2">@(i + 1). @preguntas[i].Nombre</th>
+                                <th rowspan="2">@(i + 1). @preguntas[i].Nombre</th>
                         }
                     </tr>
 
@@ -136,61 +142,79 @@
                             var ops = opciones.Where(o => o.PreguntaId == p.Id && o.Activo).ToList();
                             var valor = GetValor(p.Id);
 
-                            <td>
+                                <td>
 
                                 @if (nombre.Contains("BRAND"))
                                 {
-                                    <select id="marcaSelect" name="pregunta_@p.Id" class="form-control">
-                                        <option value="">Seleccione</option>
+                                            <select id="marcaSelect" name="pregunta_@p.Id" class="form-control">
+                                                <option value="">Seleccione</option>
                                         @foreach (var m in marcas)
                                         {
-                                            <option value="@m.Value" selected="@(m.Value == valor)">
+                                                        <option value="@m.Value" selected="@(m.Value == valor)">
                                                 @m.Text
-                                            </option>
+                                                        </option>
                                         }
-                                    </select>
+                                            </select>
                                 }
                                 else if (indicesFecha.Contains(i))
                                 {
+                                    @* DEPARTURE *@
                                     if (i == 7)
                                     {
-                                        <input type="date" id="departureDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                                    <input type="date" id="departureDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
                                     }
+                                    @* ETA *@
                                     else if (i == 8)
                                     {
-                                        <input type="date" id="etaDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                                    <input type="date" id="etaDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    }
+                                    @* FECHA INGRESO DE PESOS TERMINAL - visible 30 *@
+                                    else if (i == 29)
+                                    {
+                                                    <input type="date" id="fechaIngresoPesosTerminal" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    }
+                                    @* FECHA SALIDA AUTORIZADA - visible 31 *@
+                                    else if (i == 30)
+                                    {
+                                                    <input type="date" id="fechaSalidaAutorizada" name="pregunta_@p.Id" value="@valor" class="form-control" />
                                     }
                                     else
                                     {
-                                        <input type="date" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                                    <input type="date" name="pregunta_@p.Id" value="@valor" class="form-control" />
                                     }
                                 }
+                                @* TRÁNSITO *@
                                 else if (i == 9)
                                 {
-                                    <input type="text" id="transitoDias" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                            <input type="text" id="transitoDias" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                }
+                                @* DIAS ENTRE INGRESO Y SALIDA - visible 32 *@
+                                else if (i == 31)
+                                {
+                                            <input type="text" id="diasEntreIngresoSalida" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
                                 }
                                 else if (ops.Any())
                                 {
-                                    <select name="pregunta_@p.Id" class="form-control">
-                                        <option value="">Seleccione</option>
+                                            <select name="pregunta_@p.Id" class="form-control">
+                                                <option value="">Seleccione</option>
                                         @foreach (var o in ops)
                                         {
-                                            <option selected="@(o.Valor == valor)">
+                                                        <option selected="@(o.Valor == valor)">
                                                 @o.Valor
-                                            </option>
+                                                        </option>
                                         }
-                                    </select>
+                                            </select>
                                 }
                                 else if (nombre == "QTY")
                                 {
-                                    <input id="totalQty" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                            <input id="totalQty" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
                                 }
                                 else
                                 {
-                                    <input type="text" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                            <input type="text" name="pregunta_@p.Id" value="@valor" class="form-control" />
                                 }
 
-                            </td>
+                                </td>
                         }
 
                     </tr>
@@ -206,81 +230,83 @@
 
         @if (esEdicion)
         {
-            <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
-                📊 Auditoría
-            </button>
+                <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
+                    📊 Auditoría
+                </button>
         }
 
     </form>
 </div>
+
 @if (esEdicion)
 {
     var auditoria = ViewBag.Auditoria as List<Seguimiento.Models.AuditoriaEmbarque> ?? new List<Seguimiento.Models.AuditoriaEmbarque>();
 
-    <div class="modal fade" id="modalAuditoria">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
+        <div class="modal fade" id="modalAuditoria">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
 
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title">📊 Historial del Embarque</h5>
-                </div>
+                    <div class="modal-header bg-dark text-white">
+                        <h5 class="modal-title">📊 Historial del Embarque</h5>
+                    </div>
 
-                <div class="modal-body">
+                    <div class="modal-body">
 
                     @if (!auditoria.Any())
                     {
-                        <p class="text-muted">No hay registros de auditoría.</p>
+                                <p class="text-muted">No hay registros de auditoría.</p>
                     }
                     else
                     {
-                        <table class="table table-sm table-bordered table-hover">
-                            <thead class="table-dark text-center">
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Usuario</th>
-                                    <th>Acción</th>
-                                    <th>Detalle</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                                <table class="table table-sm table-bordered table-hover">
+                                    <thead class="table-dark text-center">
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Usuario</th>
+                                            <th>Acción</th>
+                                            <th>Detalle</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                 @foreach (var a in auditoria)
                                 {
-                                    <tr>
-                                        <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                                        <td>@a.Usuario</td>
-                                        <td>
+                                                <tr>
+                                                    <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td>@a.Usuario</td>
+                                                    <td>
                                             @if (a.Accion == "CREACIÓN")
                                             {
-                                                <span class="badge bg-success">CREACIÓN</span>
+                                                                <span class="badge bg-success">CREACIÓN</span>
                                             }
                                             else if (a.Accion == "MODIFICACIÓN")
                                             {
-                                                <span class="badge bg-warning text-dark">MODIFICACIÓN</span>
+                                                                <span class="badge bg-warning text-dark">MODIFICACIÓN</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary">@a.Accion</span>
+                                                                <span class="badge bg-secondary">@a.Accion</span>
                                             }
-                                        </td>
-                                        <td>@a.Detalle</td>
-                                    </tr>
+                                                    </td>
+                                                    <td>@a.Detalle</td>
+                                                </tr>
                                 }
-                            </tbody>
-                        </table>
+                                    </tbody>
+                                </table>
                     }
 
-                </div>
+                    </div>
 
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    </div>
 
+                </div>
             </div>
         </div>
-    </div>
 }
+
 <script>
-        // =============================
+    // =============================
     // 🔵 ESTADO GLOBAL CONFIRMACIÓN
     // =============================
     let departureConfirmado = false;
@@ -289,24 +315,22 @@
     let indexQty = @indexQty;
 
     // 🔥 DISPARAR AUTOMÁTICO EN EDITAR
-       window.onload = function () {
+    window.onload = function () {
 
-      
-    // 🔥 AUTO CONFIRMAR SI YA HAY FECHA
-    // =============================
-    let depVal = document.getElementById("departureDate")?.value;
-    let etaVal = document.getElementById("etaDate")?.value;
-    ///// Pinta de verde si se confirmo 
-             departureConfirmado = document.getElementById("departureConfirmado")?.value?.toLowerCase() === "true";
-             etaConfirmado = document.getElementById("etaConfirmado")?.value?.toLowerCase() === "true";
-        let marca = document.getElementById("marcaSelect").value;
+        departureConfirmado = document.getElementById("departureConfirmado")?.value?.toLowerCase() === "true";
+        etaConfirmado = document.getElementById("etaConfirmado")?.value?.toLowerCase() === "true";
+
+        let marca = document.getElementById("marcaSelect")?.value;
         if (marca) {
             document.getElementById("marcaSelect").dispatchEvent(new Event('change'));
         }
 
+        calcularTransito();
+        calcularDiasEntreIngresoSalida();
         evaluarReglas();
     };
-    document.getElementById("marcaSelect").addEventListener("change", function () {
+
+    document.getElementById("marcaSelect")?.addEventListener("change", function () {
 
         let marcaId = parseInt(this.value);
 
@@ -382,7 +406,6 @@
         });
 
         evaluarReglas();
-
     });
 
     // 🔥 SUMA AUTOMÁTICA
@@ -407,12 +430,32 @@
         if (dep && eta) {
             let dias = Math.floor((new Date(eta) - new Date(dep)) / (1000 * 60 * 60 * 24));
             document.getElementById("transitoDias").value = dias >= 0 ? dias : "";
+        } else if (document.getElementById("transitoDias")) {
+            document.getElementById("transitoDias").value = "";
         }
 
         evaluarReglas();
     }
 
-       document.addEventListener("change", function (e) {
+    // 🔥 NUEVO: CÁLCULO DIAS ENTRE INGRESO Y SALIDA
+    function calcularDiasEntreIngresoSalida() {
+        let ingreso = document.getElementById("fechaIngresoPesosTerminal")?.value;
+        let salida = document.getElementById("fechaSalidaAutorizada")?.value;
+        let campo = document.getElementById("diasEntreIngresoSalida");
+
+        if (!campo) return;
+
+        if (ingreso && salida) {
+            let dias = Math.floor((new Date(salida) - new Date(ingreso)) / (1000 * 60 * 60 * 24));
+            campo.value = dias >= 0 ? dias : "";
+        } else {
+            campo.value = "";
+        }
+
+        evaluarReglas();
+    }
+
+    document.addEventListener("change", function (e) {
 
         const id = e.target.id;
 
@@ -421,14 +464,10 @@
         // =============================
         if (id === "departureDate") {
 
-            console.log("Cambio en departure detectado"); // 👈 DEBUG
-
             if (e.target.value) {
-
                 let confirmacion = confirm("¿La fecha DEPARTURE está confirmada?");
-
-                    departureConfirmado = confirmacion;
-                     document.getElementById("departureConfirmado").value = confirmacion;
+                departureConfirmado = confirmacion;
+                document.getElementById("departureConfirmado").value = confirmacion;
 
                 if (!confirmacion) departureConfirmado = false;
             }
@@ -442,14 +481,10 @@
         // =============================
         if (id === "etaDate") {
 
-            console.log("Cambio en ETA detectado"); // 👈 DEBUG
-
             if (e.target.value) {
-
                 let confirmacion = confirm("¿La fecha ETA está confirmada?");
-
-                    etaConfirmado = confirmacion;
-    document.getElementById("etaConfirmado").value = confirmacion;
+                etaConfirmado = confirmacion;
+                document.getElementById("etaConfirmado").value = confirmacion;
 
                 if (!confirmacion) etaConfirmado = false;
             }
@@ -457,13 +492,20 @@
             calcularTransito();
             evaluarReglas();
         }
-    });
 
+        // =============================
+        // 🆕 FECHAS NUEVAS
+        // =============================
+        if (id === "fechaIngresoPesosTerminal" || id === "fechaSalidaAutorizada") {
+            calcularDiasEntreIngresoSalida();
+            evaluarReglas();
+        }
+    });
 
     // =====================================================
     // 🔥🔥🔥 MOTOR DE VALIDACIONES
     // =====================================================
-            function evaluarReglas() {
+    function evaluarReglas() {
 
         let hoy = new Date();
 
@@ -478,22 +520,20 @@
             return Math.floor((f1 - f2) / (1000 * 60 * 60 * 24));
         }
 
-              function rojo(el) {
-        if (!el) return;
+        function rojo(el) {
+            if (!el) return;
 
-        el.classList.remove("bg-soft-success");
-        el.classList.add("bg-soft-danger");
+            el.classList.remove("bg-soft-success");
+            el.classList.add("bg-soft-danger");
+            el.classList.add("campo-alerta");
+        }
 
-        // 🔥 agregar icono ?
-        el.classList.add("campo-alerta");
-    }
+        function verde(el) {
+            if (!el) return;
 
-    function verde(el) {
-        if (!el) return;
-
-        el.classList.remove("bg-soft-danger", "campo-alerta");
-        el.classList.add("bg-soft-success");
-    }
+            el.classList.remove("bg-soft-danger", "campo-alerta");
+            el.classList.add("bg-soft-success");
+        }
 
         function get(id) {
             return document.querySelector("[name='pregunta_" + id + "']");
@@ -512,22 +552,6 @@
         }
 
         // =============================
-        // 🎨 BRAND COLOR
-        // =============================
-        let marca = document.getElementById("marcaSelect");
-
-       /* if (marca) {
-            let txt = marca.options[marca.selectedIndex]?.text.toUpperCase();
-
-            marca.classList.remove("bg-primary","bg-danger","bg-dark","bg-light");
-
-            if (txt.includes("VW")) marca.classList.add("bg-primary");
-            if (txt.includes("ISUZU")) marca.classList.add("bg-danger");
-            if (txt.includes("GEELY")) marca.classList.add("bg-dark");
-            if (txt.includes("GAC")) marca.classList.add("bg-light");
-        }*/
-
-        // =============================
         // 🔴 DESPUÉS DE DEPARTURE (1 DÍA)
         // =============================
         if (departure && dias(hoy, departure) >= 1) {
@@ -535,7 +559,7 @@
             if (!get(4)?.value) rojo(get(4));
             if (!get(6)?.value) rojo(get(6));
 
-            [11,12,13].forEach(i => {
+            [11, 12, 13].forEach(i => {
                 if (!get(i)?.value) rojo(get(i));
             });
         }
@@ -545,7 +569,7 @@
         // =============================
         if (departure && dias(hoy, departure) >= 5) {
 
-            [14,15,16,17,18].forEach(i => {
+            [14, 15, 16, 17, 18].forEach(i => {
                 if (!get(i)?.value) rojo(get(i));
             });
         }
@@ -554,7 +578,6 @@
         // 🔴 DESPUÉS DE DEPARTURE (7 DÍAS)
         // =============================
         if (departure && dias(hoy, departure) >= 7) {
-
             if (!get(19)?.value) rojo(get(19));
         }
 
@@ -586,7 +609,7 @@
         if (eta) {
 
             if (dias(eta, hoy) <= 5) {
-                [23,24,25,27,28].forEach(i => {
+                [23, 24, 25, 27, 28].forEach(i => {
                     if (!get(i)?.value) rojo(get(i));
                 });
             }
@@ -610,55 +633,45 @@
         if (etaConfirmado) {
             verde(document.getElementById("etaDate"));
         }
-            // =============================
-    // 🔥 CAMPOS VACÍOS GENERALES
-    // =============================
-    document.querySelectorAll("#dataRow input, #dataRow select").forEach(el => {
 
-        if (el.type === "hidden" || el.readOnly) return;
+        // =============================
+        // 🔥 CAMPOS VACÍOS GENERALES
+        // =============================
+        document.querySelectorAll("#dataRow input, #dataRow select").forEach(el => {
 
-        let valor = el.value?.trim();
+            if (el.type === "hidden" || el.readOnly) return;
+
+            let valor = el.value?.trim();
 
             if (!valor) {
-        rojo(el);
-    } else {
-        // 🔥 quitar cualquier rojo si ya llenó
-        el.classList.remove("bg-soft-danger", "campo-alerta");
-
-        // 🚫 NO poner verde
+                rojo(el);
+            } else {
+                el.classList.remove("bg-soft-danger", "campo-alerta");
+            }
+        });
     }
 
-    });
-    }
-    
     document.addEventListener("DOMContentLoaded", function () {
 
-        // 🔥 buscar el primer select (STATUS)
         let statusInput = document.querySelector("#dataRow td:first-child select, #dataRow td:first-child input");
 
         if (!statusInput) {
-            console.log("No se encontró STATUS");
             return;
         }
 
         let statusValor = statusInput.value?.toLowerCase().trim();
 
-        console.log("STATUS DETECTADO:", statusValor);
-
         if (statusValor === "closed") {
 
-            // 🔒 bloquear TODO menos hidden
             document.querySelectorAll("input, select, textarea").forEach(e => {
                 if (e.type !== "hidden") {
                     e.disabled = true;
                 }
             });
 
-            // 🔒 bloquear botón
             let btn = document.querySelector("button[type='submit']");
             if (btn) btn.disabled = true;
 
-            // 🔥 mensaje visual
             let alerta = document.createElement("div");
             alerta.className = "alert alert-danger mt-2";
             alerta.innerText = "🔒 Embarque cerrado - no editable";
@@ -666,6 +679,7 @@
             document.querySelector(".container-fluid").prepend(alerta);
         }
 
+        calcularTransito();
+        calcularDiasEntreIngresoSalida();
     });
-
 </script>

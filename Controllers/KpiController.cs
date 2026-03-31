@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Seguimiento.Data;
 using Seguimiento.Models;
+using Seguimiento.Helpers;
 
 public class KPIController : Controller
 {
@@ -12,8 +14,21 @@ public class KPIController : Controller
         _context = context;
     }
 
+    private int? RolIdSesion()
+    {
+        return HttpContext.Session.GetInt32("RolId");
+    }
+
+    private bool Puede(string accion)
+    {
+        return PermisoHelper.TienePermiso(_context, RolIdSesion(), "KPI", accion);
+    }
+
     public async Task<IActionResult> Index(DateTime? fechaInicio, DateTime? fechaFin)
     {
+        if (!Puede("VER"))
+            return RedirectToAction("Dashboard", "Embarques");
+
         var empresaId = HttpContext.Session.GetInt32("Id");
 
         if (empresaId == null)
@@ -33,7 +48,9 @@ public class KPIController : Controller
 
         var lista = await query.ToListAsync();
 
-        var marcasDb = await _context.Marcas.ToListAsync();
+        var marcasDb = await _context.Marcas
+            .AsNoTracking()
+            .ToListAsync();
 
         int total = lista.Count;
         int retrasados = 0;
@@ -134,7 +151,9 @@ public class KPIController : Controller
                 Marca = m.Key,
                 Total = m.Value.total,
                 Retrasos = m.Value.retrasos,
-                OTIF = m.Value.total > 0 ? ((double)(m.Value.total - m.Value.retrasos) / m.Value.total) * 100 : 0
+                OTIF = m.Value.total > 0
+                    ? ((double)(m.Value.total - m.Value.retrasos) / m.Value.total) * 100
+                    : 0
             })
             .OrderByDescending(x => x.OTIF)
             .ToList();

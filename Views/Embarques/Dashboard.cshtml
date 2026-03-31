@@ -110,6 +110,18 @@
         box-shadow: 0px 6px 15px rgba(0,0,0,0.2);
         text-decoration: none;
     }
+
+    .dias-badge {
+        display: inline-block;
+        min-width: 45px;
+        text-align: center;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #e5e7eb;
+        color: #111827;
+    }
 </style>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -173,11 +185,8 @@
         "ORIGINAL",
         "ESTADO DEL BUQUE"
     };
-
-    
 }
 
-<!-- KPI -->
 <!-- KPI -->
 <div class="row mb-4">
 
@@ -231,13 +240,13 @@
                 <tr>
                     <th>Status</th>
                     <th>Shipment</th>
-                    <th>Empresa</th>
                     <th>Marca</th>
                     <th>Destino</th>
                     <th>Naviera</th>
                     <th>Cantidad</th>
                     <th>Salida</th>
                     <th>ETA</th>
+                    <th>Días</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -257,13 +266,13 @@
 
                     var destino = GetValor(r, "DESTINATION");
                     var naviera = GetValor(r, "SHIPPING");
-
                     var qty = item.EmbarqueModelos?.Sum(x => x.Cantidad) ?? 0;
 
                     var salida = GetFecha(r, "DEPARTURE");
                     var eta = GetFecha(r, "ETA");
-
                     var departure = GetFecha(r, "DEPARTURE");
+
+                    var diasTexto = GetValor(r, "DIAS ENTRE INGRESO Y SALIDA");
 
                     bool esRetrasado = false;
 
@@ -283,7 +292,11 @@
 
                     string estadoHtml = "";
 
-                    if (esRetrasado)
+                    if (status.ToUpper() == "CLOSED")
+                    {
+                        estadoHtml = "<span class='badge-custom bg-ok'>Entregado</span>";
+                    }
+                    else if (esRetrasado)
                     {
                         estadoHtml = "<span class='badge-custom bg-delay'>Retrasado</span>";
                     }
@@ -291,9 +304,8 @@
                     {
                         estadoHtml = "<span class='badge-custom bg-transit'>En tránsito</span>";
                     }
-                    <tr>
 
-                        <!-- STATUS REAL -->
+                    <tr>
                         <td>
                             @if (status.ToUpper() == "OPEN")
                             {
@@ -310,13 +322,22 @@
                         </td>
 
                         <td>@shipment</td>
-                        <td>@item.Empresa?.Nombre</td>
                         <td>@nombreMarca</td>
                         <td>@destino</td>
                         <td>@naviera</td>
                         <td><strong>@qty</strong></td>
                         <td>@(salida?.ToString("dd/MM/yyyy"))</td>
                         <td>@(eta?.ToString("dd/MM/yyyy"))</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(diasTexto))
+                            {
+                                <span class="dias-badge">@diasTexto</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
                         <td>@Html.Raw(estadoHtml)</td>
 
                         <td>
@@ -332,4 +353,3 @@
     </div>
 </div>
 
-<a asp-action="Create" class="fab">+</a>

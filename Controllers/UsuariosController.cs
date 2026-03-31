@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Seguimiento.Data;
 using Seguimiento.Models;
+using Seguimiento.Helpers;
 
 namespace Seguimiento.Controllers
 {
@@ -18,12 +20,23 @@ namespace Seguimiento.Controllers
             _context = context;
         }
 
-        // ===============================
-        // INDEX
-        // ===============================
+        private int? RolIdSesion()
+        {
+            return HttpContext.Session.GetInt32("RolId");
+        }
+
+        private bool Puede(string accion)
+        {
+            return PermisoHelper.TienePermiso(_context, RolIdSesion(), "USUARIOS", accion);
+        }
+
         public async Task<IActionResult> Index()
         {
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
             var usuarios = await _context.Usuarios
+                .AsNoTracking()
                 .Include(u => u.Rol)
                 .Include(u => u.UsuarioEmpresas)
                     .ThenInclude(ue => ue.Empresa)
@@ -32,51 +45,60 @@ namespace Seguimiento.Controllers
             return View(usuarios);
         }
 
-        // ===============================
-        // DETAILS
-        // ===============================
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null) return NotFound();
+            if (!Puede("VER"))
+                return RedirectToAction("Dashboard", "Embarques");
+
+            if (id == null)
+                return NotFound();
 
             var usuario = await _context.Usuarios
+                .AsNoTracking()
                 .Include(u => u.Rol)
                 .Include(u => u.UsuarioEmpresas)
                     .ThenInclude(ue => ue.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (usuario == null) return NotFound();
+            if (usuario == null)
+                return NotFound();
 
             return View(usuario);
         }
 
-        // ===============================
-        // CREATE GET
-        // ===============================
         public IActionResult Create()
         {
-            ViewBag.Empresas = _context.Empresas.ToList();
-            ViewBag.Roles = _context.Roles.ToList();
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
+            ViewBag.Empresas = _context.Empresas
+                .AsNoTracking()
+                .ToList();
+
+            ViewBag.Roles = _context.Roles
+                .AsNoTracking()
+                .Where(r => r.Activo)
+                .ToList();
 
             return View();
         }
 
-        // ===============================
-        // CREATE POST
-        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Usuario usuario, List<int> empresasSeleccionadas)
         {
+            if (!Puede("CREAR"))
+                return RedirectToAction(nameof(Index));
+
             ModelState.Remove("FechaCreacion");
             ModelState.Remove("UsuarioEmpresas");
-            ModelState.Remove("Rol"); // 🔥 CLAVE
+            ModelState.Remove("Rol");
 
             if (usuario.RolId == 0)
-                ModelState.AddModelError("RolId", "Debe seleccionar un rol");
+                ModelState.AddModelError("RolId", "Debe seleccionar un rol.");
 
-            if (string.IsNullOrEmpty(usuario.PasswordHash))
-                ModelState.AddModelError("PasswordHash", "La contraseña es obligatoria");
+            if (string.IsNullOrWhiteSpace(usuario.PasswordHash))
+                ModelState.AddModelError("PasswordHash", "La contraseña es obligatoria.");
 
             if (ModelState.IsValid)
             {
@@ -86,7 +108,8 @@ namespace Seguimiento.Controllers
                 await _context.SaveChangesAsync();
 
                 var empresasValidas = empresasSeleccionadas?
-                    .Where(x => x != 0)
+                    .Where(x => x > 0)
+                    .Distinct()
                     .ToList();
 
                 if (empresasValidas != null && empresasValidas.Any())
@@ -103,62 +126,105 @@ namespace Seguimiento.Controllers
                     await _context.SaveChangesAsync();
                 }
 
+                TempData["OK"] = "Usuario creado correctamente.";
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.Empresas = _context.Empresas.ToList();
-            ViewBag.Roles = _context.Roles.ToList();
+            ViewBag.Empresas = _context.Empresas
+                .AsNoTracking()
+                .ToList();
+
+            ViewBag.Roles = _context.Roles
+                .AsNoTracking()
+                .Where(r => r.Activo)
+                .ToList();
+
+            ViewBag.EmpresasSeleccionadas = empresasSeleccionadas?
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList() ?? new List<int>();
 
             return View(usuario);
         }
 
-        // ===============================
-        // EDIT GET
-        // ===============================
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null) return NotFound();
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
+            if (id == null)
+                return NotFound();
 
             var usuario = await _context.Usuarios
                 .Include(u => u.UsuarioEmpresas)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (usuario == null) return NotFound();
+            if (usuario == null)
+                return NotFound();
 
-            ViewBag.Empresas = _context.Empresas.ToList();
+            ViewBag.Empresas = await _context.Empresas
+                .AsNoTracking()
+                .ToListAsync();
 
             ViewBag.EmpresasSeleccionadas = usuario.UsuarioEmpresas
                 .Select(x => x.EmpresaId)
                 .ToList();
 
-            ViewBag.Roles = _context.Roles.ToList();
+            ViewBag.Roles = await _context.Roles
+                .AsNoTracking()
+                .Where(r => r.Activo)
+                .ToListAsync();
 
             return View(usuario);
         }
 
-        // ===============================
-        // EDIT POST
-        // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Usuario usuario)
         {
-            if (id != usuario.Id) return NotFound();
+            if (!Puede("EDITAR"))
+                return RedirectToAction(nameof(Index));
+
+            if (id != usuario.Id)
+                return NotFound();
 
             ModelState.Remove("UsuarioEmpresas");
             ModelState.Remove("FechaCreacion");
-            ModelState.Remove("Rol"); // 🔥 CLAVE
+            ModelState.Remove("Rol");
+            ModelState.Remove("PasswordHash");
 
             var empresasSeleccionadas = Request.Form["empresasSeleccionadas"]
-                .Where(x => !string.IsNullOrEmpty(x) && x != "0")
-                .Select(x => int.Parse(x))
+                .Where(x => !string.IsNullOrWhiteSpace(x) && x != "0")
+                .Select(x => int.TryParse(x, out int valor) ? valor : 0)
+                .Where(x => x > 0)
+                .Distinct()
                 .ToList();
 
             var usuarioDb = await _context.Usuarios
                 .Include(u => u.UsuarioEmpresas)
                 .FirstOrDefaultAsync(u => u.Id == id);
 
-            if (usuarioDb == null) return NotFound();
+            if (usuarioDb == null)
+                return NotFound();
+
+            if (usuario.RolId == 0)
+                ModelState.AddModelError("RolId", "Debe seleccionar un rol.");
+
+            if (!ModelState.IsValid)
+            {
+                ViewBag.Empresas = await _context.Empresas
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                ViewBag.EmpresasSeleccionadas = empresasSeleccionadas;
+
+                ViewBag.Roles = await _context.Roles
+                    .AsNoTracking()
+                    .Where(r => r.Activo)
+                    .ToListAsync();
+
+                return View(usuario);
+            }
 
             usuarioDb.Nombre = usuario.Nombre;
             usuarioDb.UsuarioLogin = usuario.UsuarioLogin;
@@ -167,13 +233,12 @@ namespace Seguimiento.Controllers
             usuarioDb.RolId = usuario.RolId;
 
             var nuevaPassword = Request.Form["NuevaPassword"].ToString();
-            if (!string.IsNullOrEmpty(nuevaPassword))
+            if (!string.IsNullOrWhiteSpace(nuevaPassword))
             {
                 usuarioDb.PasswordHash = nuevaPassword;
             }
 
             _context.UsuarioEmpresas.RemoveRange(usuarioDb.UsuarioEmpresas);
-            await _context.SaveChangesAsync();
 
             if (empresasSeleccionadas.Any())
             {
@@ -185,38 +250,42 @@ namespace Seguimiento.Controllers
                         EmpresaId = empresaId
                     });
                 }
-
-                await _context.SaveChangesAsync();
             }
 
+            await _context.SaveChangesAsync();
+
+            TempData["OK"] = "Usuario actualizado correctamente.";
             return RedirectToAction(nameof(Index));
         }
 
-        // ===============================
-        // DELETE
-        // ===============================
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null) return NotFound();
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
+            if (id == null)
+                return NotFound();
 
             var usuario = await _context.Usuarios
+                .AsNoTracking()
                 .Include(u => u.Rol)
                 .Include(u => u.UsuarioEmpresas)
                     .ThenInclude(ue => ue.Empresa)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
-            if (usuario == null) return NotFound();
+            if (usuario == null)
+                return NotFound();
 
             return View(usuario);
         }
 
-        // ===============================
-        // DELETE CONFIRMED
-        // ===============================
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
+            if (!Puede("ELIMINAR"))
+                return RedirectToAction(nameof(Index));
+
             var usuario = await _context.Usuarios.FindAsync(id);
 
             if (usuario != null)
@@ -226,15 +295,12 @@ namespace Seguimiento.Controllers
 
                 _context.UsuarioEmpresas.RemoveRange(relaciones);
                 _context.Usuarios.Remove(usuario);
+
+                await _context.SaveChangesAsync();
+                TempData["OK"] = "Usuario eliminado correctamente.";
             }
 
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool UsuarioExists(int id)
-        {
-            return _context.Usuarios.Any(e => e.Id == id);
         }
     }
 }
