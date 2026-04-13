@@ -25,7 +25,6 @@ namespace Seguimiento.Data
         public DbSet<MarcaEmpresa> MarcaEmpresas { get; set; }
         public DbSet<Rol> Roles { get; set; }
 
-        // NUEVO
         public DbSet<Modulo> Modulos { get; set; }
         public DbSet<RolPermiso> RolPermisos { get; set; }
 
@@ -61,6 +60,15 @@ namespace Seguimiento.Data
             modelBuilder.Entity<RolPermiso>()
                 .HasIndex(rp => new { rp.RolId, rp.ModuloId })
                 .IsUnique();
+
+            // =========================
+            // RELACIÓN PADRE - SUBTRÁMITES
+            // =========================
+            modelBuilder.Entity<Embarque>()
+                .HasOne(e => e.EmbarquePadre)
+                .WithMany(e => e.Subtramites)
+                .HasForeignKey(e => e.EmbarquePadreId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

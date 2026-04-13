@@ -20,10 +20,11 @@ namespace Seguimiento.Controllers
         private const string CAMPO_DEPARTURE = "DEPARTURE";
         private const string CAMPO_ETA = "ETA";
         private const string CAMPO_TRANSITO = "TRANSITO";
+        private const string CAMPO_QTY = "QTY";
 
-        private const string CAMPO_FECHA_INGRESO_PESOS = "FECHA INGRESO DE PESOS TERMINAL";
+        private const string CAMPO_FECHA_INGRESO_PESOS = "FECHA INGRESO DE PESOS";
         private const string CAMPO_FECHA_SALIDA_AUTORIZADA = "FECHA SALIDA AUTORIZADA";
-        private const string CAMPO_DIAS_ENTRE_INGRESO_SALIDA = "DIAS ENTRE INGRESO Y SALIDA";
+        private const string CAMPO_DIAS_ENTRE_INGRESO_SALIDA = "TIEMPO SALIDA AUTORIZADA";
 
         public EmbarquesController(ApplicationDbContext context)
         {
@@ -53,6 +54,172 @@ namespace Seguimiento.Controllers
             return DateTime.TryParse(valor, out DateTime fecha) ? fecha : (DateTime?)null;
         }
 
+        private static string NormalizarStatus(string valor)
+        {
+            return (valor ?? "").Trim().ToLower();
+        }
+
+        private static bool EsCerrado(string status)
+        {
+            status = NormalizarStatus(status);
+            return status == "closed" || status == "cerrado" || status == "entregado";
+        }
+
+        private Dictionary<string, string> ObtenerRespuestasPadrePrecargadas(int embarquePadreId)
+        {
+            var respuestasPadre = _context.Respuestas
+                .Include(r => r.Pregunta)
+                .Where(r => r.EmbarqueId == embarquePadreId && r.Pregunta != null)
+                .ToList();
+
+            string ObtenerValor(string nombreCampo)
+            {
+                return respuestasPadre
+                    .FirstOrDefault(r =>
+                        r.Pregunta != null &&
+                        !string.IsNullOrWhiteSpace(r.Pregunta.Nombre) &&
+                        r.Pregunta.Nombre.ToUpper().Contains(nombreCampo.ToUpper()))
+                    ?.Valor ?? "";
+            }
+
+            return new Dictionary<string, string>
+            {
+                { "STATUS", ObtenerValor("STATUS") },
+                { "BRAND", ObtenerValor("BRAND") },
+                { "SHIPMENT", ObtenerValor("SHIPMENT") },
+                { "DESTINATION PORT", ObtenerValor("DESTINATION PORT") },
+                { "INCOTERM", ObtenerValor("INCOTERM") },
+                { "SHIPPING COMPANY", ObtenerValor("SHIPPING COMPANY") }
+            };
+        }
+
+        private string ObtenerShipmentPadre(int embarquePadreId)
+        {
+            return _context.Respuestas
+                .Include(r => r.Pregunta)
+                .Where(r => r.EmbarqueId == embarquePadreId
+                         && r.Pregunta != null
+                         && r.Pregunta.Nombre != null
+                         && r.Pregunta.Nombre.ToUpper().Contains("SHIPMENT"))
+                .Select(r => r.Valor)
+                .FirstOrDefault() ?? $"#{embarquePadreId}";
+        }
+
+        private int ObtenerQtyDesdeFormulario(IFormCollection form, List<Pregunta> preguntas)
+        {
+            int totalModelos = 0;
+
+            foreach (var key in form.Keys)
+            {
+                if (key.StartsWith("modelo_"))
+                {
+                    var valor = form[key].ToString();
+
+                    if (int.TryParse(valor, out int cantidad) && cantidad > 0)
+                        totalModelos += cantidad;
+                }
+            }
+
+            if (totalModelos > 0)
+                return totalModelos;
+
+            foreach (var p in preguntas)
+            {
+                var nombre = p.Nombre?.Trim().ToUpper() ?? "";
+
+                if (nombre == CAMPO_QTY)
+                {
+                    var valorQty = form["pregunta_" + p.Id].ToString();
+
+                    if (int.TryParse(valorQty, out int qty))
+                        return qty;
+
+                    break;
+                }
+            }
+
+            return 0;
+        }
+
+        private int ObtenerQtyEmbarque(int embarqueId)
+        {
+            var respuestaQty = _context.Respuestas
+                .Include(r => r.Pregunta)
+                .Where(r => r.EmbarqueId == embarqueId
+                         && r.Pregunta != null
+                         && r.Pregunta.Nombre != null
+                         && r.Pregunta.Nombre.ToUpper().Trim() == CAMPO_QTY)
+                .Select(r => r.Valor)
+                .FirstOrDefault();
+
+            if (int.TryParse(respuestaQty, out int qtyRespuesta))
+                return qtyRespuesta;
+
+            return _context.EmbarqueModelos
+                .Where(x => x.EmbarqueId == embarqueId)
+                .Sum(x => (int?)x.Cantidad) ?? 0;
+        }
+
+        private int ObtenerSumaQtySubtramites(int embarquePadreId, int? excluirEmbarqueId = null)
+        {
+            var query = _context.Embarques
+                .Where(e => e.EsSubtramite && e.EmbarquePadreId == embarquePadreId);
+
+            if (excluirEmbarqueId.HasValue)
+                query = query.Where(e => e.Id != excluirEmbarqueId.Value);
+
+            var ids = query.Select(e => e.Id).ToList();
+
+            if (!ids.Any())
+                return 0;
+
+            var respuestasQty = _context.Respuestas
+                .Include(r => r.Pregunta)
+                .Where(r => ids.Contains(r.EmbarqueId)
+                         && r.Pregunta != null
+                         && r.Pregunta.Nombre != null
+                         && r.Pregunta.Nombre.ToUpper().Trim() == CAMPO_QTY)
+                .ToList();
+
+            int suma = 0;
+
+            foreach (var id in ids)
+            {
+                var valorQty = respuestasQty
+                    .FirstOrDefault(r => r.EmbarqueId == id)
+                    ?.Valor;
+
+                if (int.TryParse(valorQty, out int qty))
+                {
+                    suma += qty;
+                }
+                else
+                {
+                    suma += _context.EmbarqueModelos
+                        .Where(x => x.EmbarqueId == id)
+                        .Sum(x => (int?)x.Cantidad) ?? 0;
+                }
+            }
+
+            return suma;
+        }
+
+        private void AsignarMensajeValidacionQtySubtramites(int embarquePadreId)
+        {
+            var qtyPrincipal = ObtenerQtyEmbarque(embarquePadreId);
+            var sumaSubtramites = ObtenerSumaQtySubtramites(embarquePadreId);
+            var shipmentPadre = ObtenerShipmentPadre(embarquePadreId);
+
+            if (sumaSubtramites == qtyPrincipal)
+            {
+                TempData["OK"] = $"Correcto: la suma de QTY de los subtrámites del embarque {shipmentPadre} es exactamente {qtyPrincipal}.";
+            }
+            else
+            {
+                TempData["OK"] = $"Advertencia: la suma actual de QTY de los subtrámites del embarque {shipmentPadre} es {sumaSubtramites} y el QTY del principal es {qtyPrincipal}.";
+            }
+        }
+
         // =========================
         // INDEX
         // =========================
@@ -78,7 +245,7 @@ namespace Seguimiento.Controllers
         // =========================
         // DASHBOARD
         // =========================
-        public async Task<IActionResult> Dashboard(string filtro)
+        public async Task<IActionResult> Dashboard(string filtro, int? marcaId)
         {
             if (!Puede("VER"))
                 return RedirectToAction("Login", "Account");
@@ -93,6 +260,7 @@ namespace Seguimiento.Controllers
                 .FirstOrDefault(x => x.Id == empresaId);
 
             ViewBag.NombreEmpresa = empresa?.Nombre;
+            ViewBag.MarcaId = marcaId;
 
             var embarques = await _context.Embarques
                 .Include(x => x.Empresa)
@@ -100,159 +268,177 @@ namespace Seguimiento.Controllers
                     .ThenInclude(r => r.Pregunta)
                 .Include(x => x.EmbarqueModelos)
                 .Where(x => x.EmpresaId == empresaId)
-                .OrderByDescending(x => x.FechaRegistro)
                 .ToListAsync();
-
-            var embarquesOriginal = embarques.ToList();
 
             var camposObligatorios = new List<string>
             {
                 "ETA","TRÁNSITO","HOMOLOGATION","CERTIFICADO 017 INEN","AFIP",
-                "INVOICES","BLs","BL","COs","APLICACIONES DE SEGURO","LICENCIA INEN",
+                "INVOICES","BLS","BL","COS","APLICACIONES DE SEGURO","LICENCIA INEN",
                 "PACKING","SUBCATEGOR","NOTIFICACIÓN SRI","DESTINO ADUANERO",
                 "TIPO DE PAGO","DIAS LIBRES","MRN","PRE-LIQUIDACIÓN","EMISION BL",
                 "CAS","PAGO FLETE","ORIGINAL","ESTADO DEL BUQUE"
             };
 
-            if (!string.IsNullOrEmpty(filtro) && filtro != "todos")
-            {
-                embarques = embarques.Where(e =>
+            ViewBag.MarcasFiltro = _context.Marcas
+                .Where(x => x.Activo && x.MarcaEmpresas.Any(me => me.EmpresaId == empresaId))
+                .OrderBy(x => x.Nombre)
+                .Select(x => new SelectListItem
                 {
-                    var r = e.Respuestas?.ToList() ?? new List<Respuesta>();
+                    Value = x.Id.ToString(),
+                    Text = x.Nombre
+                })
+                .ToList();
 
-                    var status = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains("STATUS"))?.Valor?.ToLower();
-                    var departure = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains("DEPARTURE"))?.Valor;
+            string GetValor(Embarque e, string nombreCampo)
+            {
+                var r = e.Respuestas?.ToList() ?? new List<Respuesta>();
 
-                    bool esRetrasado = false;
-
-                    if (DateTime.TryParse(departure, out DateTime depDate) && depDate < DateTime.Now && status != "closed")
-                    {
-                        foreach (var campo in camposObligatorios)
-                        {
-                            var val = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains(campo))?.Valor;
-                            if (string.IsNullOrWhiteSpace(val))
-                            {
-                                esRetrasado = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (filtro == "transito")
-                    {
-                        var dep = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains("DEPARTURE"))?.Valor;
-                        bool esRetrasadoLocal = false;
-
-                        if (DateTime.TryParse(dep, out DateTime fechaDep))
-                        {
-                            if (fechaDep.Date.AddDays(1) < DateTime.Now.Date)
-                            {
-                                foreach (var campo in camposObligatorios)
-                                {
-                                    var val = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains(campo))?.Valor;
-
-                                    if (string.IsNullOrWhiteSpace(val))
-                                    {
-                                        esRetrasadoLocal = true;
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-
-                        return !esRetrasadoLocal;
-                    }
-                    else if (filtro == "entregado")
-                    {
-                        return status == "entregado" || status == "closed";
-                    }
-                    else if (filtro == "retrasado")
-                    {
-                        return esRetrasado;
-                    }
-
-                    return true;
-                }).ToList();
+                return r.FirstOrDefault(x =>
+                    x.Pregunta != null &&
+                    x.Pregunta.Nombre != null &&
+                    x.Pregunta.Nombre.ToUpper().Contains(nombreCampo.ToUpper())
+                )?.Valor ?? "";
             }
 
-            var total = embarquesOriginal.Count();
-
-            var enTransito = embarquesOriginal.Count(e =>
+            DateTime? GetFecha(Embarque e, string nombreCampo)
             {
-                var r = e.Respuestas?.ToList() ?? new List<Respuesta>();
-                var departure = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains("DEPARTURE"))?.Valor;
+                var valor = GetValor(e, nombreCampo);
+                return DateTime.TryParse(valor, out DateTime fecha) ? fecha : (DateTime?)null;
+            }
 
-                bool esRetrasado = false;
-
-                if (DateTime.TryParse(departure, out DateTime depDate))
-                {
-                    if (depDate.Date.AddDays(1) < DateTime.Now.Date)
-                    {
-                        foreach (var campo in camposObligatorios)
-                        {
-                            var val = r.FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains(campo))?.Valor;
-
-                            if (string.IsNullOrWhiteSpace(val))
-                            {
-                                esRetrasado = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                return !esRetrasado;
-            });
-
-            var entregados = embarquesOriginal.Count(e =>
+            int? GetMarcaId(Embarque e)
             {
-                var status = e.Respuestas
-                    .FirstOrDefault(r => r.Pregunta != null && r.Pregunta.Nombre.ToUpper().Contains("STATUS"))
-                    ?.Valor?.ToLower();
+                var valor = GetValor(e, "BRAND");
+                return int.TryParse(valor, out int idMarca) ? idMarca : (int?)null;
+            }
 
-                return status == "entregado" || status == "closed";
-            });
-
-            var retrasados = embarquesOriginal.Count(e =>
+            bool EsRetrasado(Embarque e)
             {
-                var r = e.Respuestas?.ToList() ?? new List<Respuesta>();
+                var status = NormalizarStatus(GetValor(e, "STATUS"));
 
-                var departure = r
-                    .FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains("DEPARTURE"))
-                    ?.Valor;
-
-                if (!DateTime.TryParse(departure, out DateTime depDate))
+                if (EsCerrado(status))
                     return false;
 
-                if (!(depDate.Date.AddDays(1) < DateTime.Now.Date))
+                var departure = GetFecha(e, "DEPARTURE");
+
+                if (!departure.HasValue)
+                    return false;
+
+                if (!(departure.Value.Date.AddDays(1) < DateTime.Now.Date))
                     return false;
 
                 foreach (var campo in camposObligatorios)
                 {
-                    var val = r
-                        .FirstOrDefault(x => x.Pregunta != null && x.Pregunta.Nombre.ToUpper().Contains(campo))
-                        ?.Valor;
+                    var val = GetValor(e, campo);
 
                     if (string.IsNullOrWhiteSpace(val))
                         return true;
                 }
 
                 return false;
+            }
+
+            if (marcaId.HasValue)
+            {
+                embarques = embarques
+                    .Where(e => GetMarcaId(e) == marcaId.Value)
+                    .ToList();
+            }
+
+            var embarquesOriginal = embarques.ToList();
+
+            var embarquesKpi = embarquesOriginal
+                .Where(e => !e.EsSubtramite)
+                .ToList();
+
+            var total = embarquesKpi.Count();
+
+            var enTransito = embarquesKpi.Count(e =>
+            {
+                var status = NormalizarStatus(GetValor(e, "STATUS"));
+                return !EsCerrado(status);
             });
+
+            var entregados = embarquesKpi.Count(e =>
+            {
+                var status = NormalizarStatus(GetValor(e, "STATUS"));
+                return EsCerrado(status);
+            });
+
+            var retrasados = embarquesKpi.Count(e => EsRetrasado(e));
+
+            var cerrados = embarquesKpi.Count(e =>
+            {
+                var status = NormalizarStatus(GetValor(e, "STATUS"));
+                return EsCerrado(status);
+            });
+
+            var abiertos = embarquesKpi.Count(e =>
+            {
+                var status = NormalizarStatus(GetValor(e, "STATUS"));
+                return !EsCerrado(status);
+            });
+
+            if (!string.IsNullOrEmpty(filtro) && filtro != "todos")
+            {
+                embarques = embarques.Where(e =>
+                {
+                    var status = NormalizarStatus(GetValor(e, "STATUS"));
+                    var esRetrasado = EsRetrasado(e);
+
+                    if (filtro == "transito")
+                        return !EsCerrado(status);
+                    else if (filtro == "entregado")
+                        return EsCerrado(status);
+                    else if (filtro == "retrasado")
+                        return esRetrasado;
+
+                    return true;
+                }).ToList();
+            }
+
+            var principales = embarques
+                .Where(e => !e.EsSubtramite)
+                .OrderBy(e => GetFecha(e, "ETA") ?? DateTime.MaxValue)
+                .ThenByDescending(e => e.FechaRegistro)
+                .ToList();
+
+            var subtramites = embarques
+                .Where(e => e.EsSubtramite)
+                .OrderBy(e => e.EmbarquePadreId)
+                .ThenBy(e => e.OrdenSubtramite ?? int.MaxValue)
+                .ThenBy(e => GetFecha(e, "ETA") ?? DateTime.MaxValue)
+                .ThenByDescending(e => e.FechaRegistro)
+                .ToList();
+
+            var listaOrdenada = new List<Embarque>();
+
+            foreach (var principal in principales)
+            {
+                listaOrdenada.Add(principal);
+
+                var hijos = subtramites
+                    .Where(s => s.EmbarquePadreId == principal.Id)
+                    .ToList();
+
+                listaOrdenada.AddRange(hijos);
+            }
 
             ViewBag.Marcas = _context.Marcas.ToList();
             ViewBag.Total = total;
             ViewBag.EnTransito = enTransito;
             ViewBag.Entregados = entregados;
             ViewBag.Retrasados = retrasados;
+            ViewBag.Cerrados = cerrados;
+            ViewBag.Abiertos = abiertos;
 
-            return View(embarques);
+            return View(listaOrdenada);
         }
 
         // =========================
         // CREATE GET
         // =========================
-        public IActionResult Create()
+        public IActionResult Create(int? embarquePadreId)
         {
             if (!Puede("CREAR"))
                 return RedirectToAction("Dashboard");
@@ -262,8 +448,56 @@ namespace Seguimiento.Controllers
             if (empresaId == null)
                 return RedirectToAction("Login", "Account");
 
+            var embarque = new Embarque
+            {
+                EmpresaId = empresaId.Value,
+                EsSubtramite = false,
+                EmbarquePadreId = null,
+                OrdenSubtramite = null
+            };
+
+            if (embarquePadreId.HasValue)
+            {
+                var padre = _context.Embarques
+                    .AsNoTracking()
+                    .FirstOrDefault(e => e.Id == embarquePadreId.Value && e.EmpresaId == empresaId.Value);
+
+                if (padre == null)
+                {
+                    TempData["Error"] = "El trámite principal no existe o no pertenece a esta empresa.";
+                    return RedirectToAction("Dashboard");
+                }
+
+                var siguienteOrden = (_context.Embarques
+                    .Where(e => e.EmbarquePadreId == embarquePadreId.Value)
+                    .Max(e => (int?)e.OrdenSubtramite) ?? 0) + 1;
+
+                embarque.EsSubtramite = true;
+                embarque.EmbarquePadreId = embarquePadreId.Value;
+                embarque.OrdenSubtramite = siguienteOrden;
+
+                ViewBag.EsSubtramite = true;
+                ViewBag.EmbarquePadreId = embarquePadreId.Value;
+                ViewBag.EmbarquePadreShipment = ObtenerShipmentPadre(embarquePadreId.Value);
+                ViewBag.OrdenSubtramite = siguienteOrden;
+                ViewBag.TituloFormulario = "Crear Subtrámite";
+                ViewBag.RespuestasPrecargadasSubtramite = ObtenerRespuestasPadrePrecargadas(embarquePadreId.Value);
+            }
+            else
+            {
+                ViewBag.EsSubtramite = false;
+                ViewBag.EmbarquePadreId = null;
+                ViewBag.EmbarquePadreShipment = null;
+                ViewBag.OrdenSubtramite = null;
+                ViewBag.TituloFormulario = "Crear Embarque";
+                ViewBag.RespuestasPrecargadasSubtramite = new Dictionary<string, string>();
+            }
+
             CargarCombos(empresaId.Value);
             CargarPreguntas();
+
+            ViewBag.EsSoloLectura = false;
+            ViewBag.MensajeCierre = null;
 
             var modelos = _context.Modelos
                 .Include(m => m.TipoModelo)
@@ -279,7 +513,7 @@ namespace Seguimiento.Controllers
 
             ViewBag.ModelosJson = modelos;
 
-            return View(new Embarque());
+            return View(embarque);
         }
 
         // =========================
@@ -304,14 +538,40 @@ namespace Seguimiento.Controllers
             if (embarque == null)
                 return NotFound();
 
+            var statusActual = NormalizarStatus(
+                embarque.Respuestas
+                    .FirstOrDefault(r => r.Pregunta != null && r.Pregunta.Nombre.ToUpper().Contains("STATUS"))
+                    ?.Valor
+            );
+
             CargarCombos(empresaId.Value);
             CargarPreguntas();
+
+            ViewBag.EsSoloLectura = EsCerrado(statusActual);
+            ViewBag.MensajeCierre = EsCerrado(statusActual)
+                ? "El embarque está cerrado. Los datos se muestran solo para consulta y no pueden editarse."
+                : null;
 
             ViewBag.DepartureConfirmado = embarque.Respuestas
                 .Any(r => r.PreguntaId == 8 && r.Valor == "CONFIRMADO");
 
             ViewBag.EtaConfirmado = embarque.Respuestas
                 .Any(r => r.PreguntaId == 9 && r.Valor == "CONFIRMADO");
+
+            ViewBag.EsSubtramite = embarque.EsSubtramite;
+            ViewBag.EmbarquePadreId = embarque.EmbarquePadreId;
+            ViewBag.OrdenSubtramite = embarque.OrdenSubtramite;
+            ViewBag.TituloFormulario = embarque.EsSubtramite ? "Editar Subtrámite" : "Editar Embarque";
+            ViewBag.RespuestasPrecargadasSubtramite = new Dictionary<string, string>();
+
+            if (embarque.EsSubtramite && embarque.EmbarquePadreId.HasValue)
+            {
+                ViewBag.EmbarquePadreShipment = ObtenerShipmentPadre(embarque.EmbarquePadreId.Value);
+            }
+            else
+            {
+                ViewBag.EmbarquePadreShipment = null;
+            }
 
             var modelos = _context.Modelos
                 .Include(m => m.TipoModelo)
@@ -352,48 +612,28 @@ namespace Seguimiento.Controllers
             if (empresaId == null)
                 return RedirectToAction("Login", "Account");
 
-            var embarque = new Embarque
-            {
-                EmpresaId = empresaId.Value,
-                FechaRegistro = DateTime.Now,
-                CreadoPor = HttpContext.Session.GetString("Usuario"),
-                FechaCreacion = DateTime.Now
-            };
+            int? embarquePadreId = null;
+            int? ordenSubtramite = null;
+            bool esSubtramite = false;
 
-            _context.Embarques.Add(embarque);
-            await _context.SaveChangesAsync();
-
-            _context.AuditoriaEmbarques.Add(new AuditoriaEmbarque
+            if (int.TryParse(form["EmbarquePadreId"], out int padreIdForm) && padreIdForm > 0)
             {
-                EmbarqueId = embarque.Id,
-                Usuario = HttpContext.Session.GetString("UsuarioNombre") ?? "Sistema",
-                Accion = "CREACIÓN",
-                Fecha = DateTime.Now,
-                Detalle = "Se creó el embarque"
-            });
+                var padre = await _context.Embarques
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(e => e.Id == padreIdForm && e.EmpresaId == empresaId.Value);
 
-            foreach (var key in form.Keys)
-            {
-                if (key.StartsWith("modelo_"))
+                if (padre == null)
                 {
-                    var modeloId = int.Parse(key.Replace("modelo_", ""));
-                    var valor = form[key];
-
-                    if (!string.IsNullOrWhiteSpace(valor))
-                    {
-                        int cantidad = int.Parse(valor);
-
-                        if (cantidad > 0)
-                        {
-                            _context.EmbarqueModelos.Add(new EmbarqueModelo
-                            {
-                                EmbarqueId = embarque.Id,
-                                ModeloId = modeloId,
-                                Cantidad = cantidad
-                            });
-                        }
-                    }
+                    TempData["Error"] = "El trámite principal no existe o no pertenece a esta empresa.";
+                    return RedirectToAction("Dashboard");
                 }
+
+                embarquePadreId = padreIdForm;
+                esSubtramite = true;
+
+                ordenSubtramite = (_context.Embarques
+                    .Where(e => e.EmbarquePadreId == padreIdForm)
+                    .Max(e => (int?)e.OrdenSubtramite) ?? 0) + 1;
             }
 
             var preguntas = _context.Preguntas
@@ -406,6 +646,7 @@ namespace Seguimiento.Controllers
             DateTime? fechaIngresoPesos = null;
             DateTime? fechaSalidaAutorizada = null;
             int marcaId = 0;
+            int qtyActualSubtramite = ObtenerQtyDesdeFormulario(form, preguntas);
 
             foreach (var p in preguntas)
             {
@@ -435,28 +676,147 @@ namespace Seguimiento.Controllers
                 }
             }
 
+            void PrepararVistaError()
+            {
+                CargarCombos(empresaId.Value);
+                CargarPreguntas();
+
+                ViewBag.EsSoloLectura = false;
+                ViewBag.MensajeCierre = null;
+                ViewBag.EsSubtramite = esSubtramite;
+                ViewBag.EmbarquePadreId = embarquePadreId;
+                ViewBag.OrdenSubtramite = ordenSubtramite;
+                ViewBag.TituloFormulario = esSubtramite ? "Crear Subtrámite" : "Crear Embarque";
+                ViewBag.EmbarquePadreShipment = embarquePadreId.HasValue ? ObtenerShipmentPadre(embarquePadreId.Value) : null;
+                ViewBag.RespuestasPrecargadasSubtramite = embarquePadreId.HasValue
+                    ? ObtenerRespuestasPadrePrecargadas(embarquePadreId.Value)
+                    : new Dictionary<string, string>();
+
+                var modelosError = _context.Modelos
+                    .Include(m => m.TipoModelo)
+                    .Select(m => new
+                    {
+                        m.Id,
+                        m.Nombre,
+                        m.MarcaId,
+                        TipoId = m.TipoModeloId,
+                        Tipo = m.TipoModelo.Nombre
+                    })
+                    .ToList();
+
+                ViewBag.ModelosJson = modelosError;
+            }
+
             if (marcaId == 0)
             {
                 ModelState.AddModelError("", "Debe seleccionar una marca");
-                CargarCombos(empresaId.Value);
-                CargarPreguntas();
-                return View(new Embarque());
+                PrepararVistaError();
+
+                return View(new Embarque
+                {
+                    EmpresaId = empresaId.Value,
+                    EsSubtramite = esSubtramite,
+                    EmbarquePadreId = embarquePadreId,
+                    OrdenSubtramite = ordenSubtramite
+                });
             }
 
             if (fechaDeparture.HasValue && fechaEta.HasValue && fechaEta < fechaDeparture)
             {
                 ModelState.AddModelError("", "ETA no puede ser menor que Departure");
-                CargarCombos(empresaId.Value);
-                CargarPreguntas();
-                return View(new Embarque());
+                PrepararVistaError();
+
+                return View(new Embarque
+                {
+                    EmpresaId = empresaId.Value,
+                    EsSubtramite = esSubtramite,
+                    EmbarquePadreId = embarquePadreId,
+                    OrdenSubtramite = ordenSubtramite
+                });
             }
 
             if (fechaIngresoPesos.HasValue && fechaSalidaAutorizada.HasValue && fechaSalidaAutorizada < fechaIngresoPesos)
             {
-                ModelState.AddModelError("", "FECHA SALIDA AUTORIZADA no puede ser menor que FECHA INGRESO DE PESOS TERMINAL");
-                CargarCombos(empresaId.Value);
-                CargarPreguntas();
-                return View(new Embarque());
+                ModelState.AddModelError("", "FECHA SALIDA AUTORIZADA no puede ser menor que FECHA INGRESO DE PESOS");
+                PrepararVistaError();
+
+                return View(new Embarque
+                {
+                    EmpresaId = empresaId.Value,
+                    EsSubtramite = esSubtramite,
+                    EmbarquePadreId = embarquePadreId,
+                    OrdenSubtramite = ordenSubtramite
+                });
+            }
+
+            if (esSubtramite && embarquePadreId.HasValue)
+            {
+                int qtyPrincipal = ObtenerQtyEmbarque(embarquePadreId.Value);
+                int qtyExistenteSubtramites = ObtenerSumaQtySubtramites(embarquePadreId.Value);
+                int nuevoTotalSubtramites = qtyExistenteSubtramites + qtyActualSubtramite;
+
+                if (nuevoTotalSubtramites > qtyPrincipal)
+                {
+                    ModelState.AddModelError("", $"La suma de QTY de los subtrámites ({nuevoTotalSubtramites}) no puede superar el QTY del embarque principal ({qtyPrincipal}).");
+                    PrepararVistaError();
+
+                    return View(new Embarque
+                    {
+                        EmpresaId = empresaId.Value,
+                        EsSubtramite = esSubtramite,
+                        EmbarquePadreId = embarquePadreId,
+                        OrdenSubtramite = ordenSubtramite
+                    });
+                }
+            }
+
+            var embarque = new Embarque
+            {
+                EmpresaId = empresaId.Value,
+                FechaRegistro = DateTime.Now,
+                CreadoPor = HttpContext.Session.GetString("Usuario"),
+                FechaCreacion = DateTime.Now,
+                EsSubtramite = esSubtramite,
+                EmbarquePadreId = embarquePadreId,
+                OrdenSubtramite = ordenSubtramite
+            };
+
+            _context.Embarques.Add(embarque);
+            await _context.SaveChangesAsync();
+
+            _context.AuditoriaEmbarques.Add(new AuditoriaEmbarque
+            {
+                EmbarqueId = embarque.Id,
+                Usuario = HttpContext.Session.GetString("UsuarioNombre") ?? "Sistema",
+                Accion = "CREACIÓN",
+                Fecha = DateTime.Now,
+                Detalle = esSubtramite
+                    ? $"Se creó el subtrámite #{ordenSubtramite} del embarque padre {ObtenerShipmentPadre(embarquePadreId ?? 0)}"
+                    : "Se creó el embarque"
+            });
+
+            foreach (var key in form.Keys)
+            {
+                if (key.StartsWith("modelo_"))
+                {
+                    var modeloId = int.Parse(key.Replace("modelo_", ""));
+                    var valor = form[key];
+
+                    if (!string.IsNullOrWhiteSpace(valor))
+                    {
+                        int cantidad = int.Parse(valor);
+
+                        if (cantidad > 0)
+                        {
+                            _context.EmbarqueModelos.Add(new EmbarqueModelo
+                            {
+                                EmbarqueId = embarque.Id,
+                                ModeloId = modeloId,
+                                Cantidad = cantidad
+                            });
+                        }
+                    }
+                }
             }
 
             foreach (var p in preguntas)
@@ -526,6 +886,15 @@ namespace Seguimiento.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (esSubtramite && embarquePadreId.HasValue)
+            {
+                AsignarMensajeValidacionQtySubtramites(embarquePadreId.Value);
+            }
+            else
+            {
+                TempData["OK"] = "Embarque guardado correctamente.";
+            }
+
             return RedirectToAction("Dashboard");
         }
 
@@ -553,18 +922,21 @@ namespace Seguimiento.Controllers
 
             if (preguntaStatus != null)
             {
-                var statusActual = respuestasActuales
-                    .FirstOrDefault(r => r.PreguntaId == preguntaStatus.Id)?.Valor?.ToLower();
+                var statusActual = NormalizarStatus(
+                    respuestasActuales.FirstOrDefault(r => r.PreguntaId == preguntaStatus.Id)?.Valor
+                );
 
-                var statusNuevo = form["pregunta_" + preguntaStatus.Id].ToString()?.ToLower();
+                var statusNuevo = NormalizarStatus(
+                    form["pregunta_" + preguntaStatus.Id].ToString()
+                );
 
-                if (statusActual == "closed")
+                if (EsCerrado(statusActual))
                 {
-                    TempData["Error"] = "El embarque ya está cerrado y no puede modificarse.";
+                    TempData["Error"] = "El embarque está cerrado y no puede modificarse.";
                     return RedirectToAction("Dashboard");
                 }
 
-                if (statusNuevo == "closed")
+                if (EsCerrado(statusNuevo))
                 {
                     // Se guarda y desde el siguiente intento quedará bloqueado.
                 }
@@ -575,6 +947,8 @@ namespace Seguimiento.Controllers
                 .Where(x => x.Activo)
                 .OrderBy(x => x.Orden)
                 .ToList();
+
+            int qtyActualSubtramite = ObtenerQtyDesdeFormulario(form, preguntas);
 
             DateTime? fechaDeparture = null;
             DateTime? fechaEta = null;
@@ -614,8 +988,21 @@ namespace Seguimiento.Controllers
 
             if (fechaIngresoPesos.HasValue && fechaSalidaAutorizada.HasValue && fechaSalidaAutorizada < fechaIngresoPesos)
             {
-                TempData["Error"] = "FECHA SALIDA AUTORIZADA no puede ser menor que FECHA INGRESO DE PESOS TERMINAL.";
+                TempData["Error"] = "FECHA SALIDA AUTORIZADA no puede ser menor que FECHA INGRESO DE PESOS.";
                 return RedirectToAction("Edit", new { id });
+            }
+
+            if (embarque.EsSubtramite && embarque.EmbarquePadreId.HasValue)
+            {
+                int qtyPrincipal = ObtenerQtyEmbarque(embarque.EmbarquePadreId.Value);
+                int qtyOtrosSubtramites = ObtenerSumaQtySubtramites(embarque.EmbarquePadreId.Value, id);
+                int nuevoTotalSubtramites = qtyOtrosSubtramites + qtyActualSubtramite;
+
+                if (nuevoTotalSubtramites > qtyPrincipal)
+                {
+                    TempData["Error"] = $"La suma de QTY de los subtrámites ({nuevoTotalSubtramites}) no puede superar el QTY del embarque principal ({qtyPrincipal}).";
+                    return RedirectToAction("Edit", new { id });
+                }
             }
 
             foreach (var p in preguntas)
@@ -751,6 +1138,15 @@ namespace Seguimiento.Controllers
 
             await _context.SaveChangesAsync();
 
+            if (embarque.EsSubtramite && embarque.EmbarquePadreId.HasValue)
+            {
+                AsignarMensajeValidacionQtySubtramites(embarque.EmbarquePadreId.Value);
+            }
+            else
+            {
+                TempData["OK"] = "Embarque actualizado correctamente.";
+            }
+
             return RedirectToAction("Dashboard");
         }
 
@@ -832,6 +1228,11 @@ namespace Seguimiento.Controllers
 
                 _context.Embarques.Remove(embarque);
                 await _context.SaveChangesAsync();
+
+                if (embarque.EsSubtramite && embarque.EmbarquePadreId.HasValue)
+                {
+                    AsignarMensajeValidacionQtySubtramites(embarque.EmbarquePadreId.Value);
+                }
             }
 
             return RedirectToAction("Dashboard");

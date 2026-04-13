@@ -767,7 +767,7 @@ const NAME$d = 'alert';
 const DATA_KEY$c = 'bs.alert';
 const EVENT_KEY$c = `.${DATA_KEY$c}`;
 const EVENT_CLOSE = `close${EVENT_KEY$c}`;
-const EVENT_CLOSED = `closed${EVENT_KEY$c}`;
+const EVENT_Closed = `Closed${EVENT_KEY$c}`;
 const CLASS_NAME_FADE$5 = 'fade';
 const CLASS_NAME_SHOW$8 = 'show';
 /**
@@ -801,7 +801,7 @@ class Alert extends BaseComponent {
   _destroyElement() {
     this._element.remove();
 
-    EventHandler.trigger(this._element, EVENT_CLOSED);
+    EventHandler.trigger(this._element, EVENT_Closed);
     this.dispose();
   } // Static
 
@@ -3363,7 +3363,7 @@ EventHandler.on(document, EVENT_CLICK_DATA_API$1, SELECTOR_DATA_TOGGLE$1, functi
   }
 
   EventHandler.one(target, EVENT_HIDDEN$2, () => {
-    // focus on trigger when it is closed
+    // focus on trigger when it is Closed
     if (isVisible(this)) {
       this.focus();
     }

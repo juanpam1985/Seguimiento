@@ -9,83 +9,194 @@
         background: #f4f6fb;
     }
 
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+    }
+
+        .page-header h3 {
+            margin: 0;
+            font-weight: 700;
+            color: #111827;
+        }
+
+    .page-subtitle {
+        color: #6b7280;
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+    .top-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-box {
+        background: white;
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        margin-top: 16px;
+        margin-bottom: 20px;
+    }
+
+        .filter-box label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 6px;
+        }
+
     .kpi-card {
-        border-radius: 14px;
-        padding: 25px;
+        border-radius: 16px;
+        padding: 24px;
         color: white;
         text-align: center;
         font-weight: 600;
-        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-        transition: 0.2s;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.10);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        min-height: 128px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
         .kpi-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 26px rgba(0,0,0,0.12);
         }
 
         .kpi-card h1 {
-            font-size: 32px;
+            font-size: 34px;
             margin: 0;
+            font-weight: 800;
         }
 
         .kpi-card p {
-            margin: 5px 0 0 0;
-            font-size: 13px;
+            margin: 8px 0 0 0;
+            font-size: 14px;
+            opacity: 0.95;
         }
 
     .verde {
-        background: #16a34a;
+        background: linear-gradient(135deg, #16a34a, #15803d);
     }
 
     .rojo {
-        background: #dc2626;
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
     }
 
     .amarillo {
-        background: #f59e0b;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
     }
 
     .azul {
-        background: #2563eb;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
     }
 
     .gris {
-        background: #374151;
+        background: linear-gradient(135deg, #4b5563, #374151);
     }
 
     .card-box {
         background: white;
-        border-radius: 14px;
-        padding: 20px;
+        border-radius: 16px;
+        padding: 22px;
         box-shadow: 0 8px 20px rgba(0,0,0,0.08);
         margin-top: 20px;
+    }
+
+    .section-title {
+        margin: 0 0 14px 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
     }
 
     .table thead {
         background: #111827;
         color: white;
+        vertical-align: middle;
+    }
+
+    .table tbody tr:hover {
+        background: #f8fafc;
+    }
+
+    .resumen-table td,
+    .resumen-table th,
+    .ranking-table td,
+    .ranking-table th {
+        vertical-align: middle;
+    }
+
+    .estado-pill {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .estado-entregado {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .estado-transito {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .estado-retrasado {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .chart-wrap {
+        position: relative;
+        min-height: 320px;
+    }
+
+    .mini-note {
+        font-size: 12px;
+        color: #6b7280;
     }
 </style>
+
 @if (TempData["OK"] != null)
 {
-        <div style="background:#28a745;color:white;padding:10px;border-radius:5px;margin-bottom:10px;">
-            ✔ @TempData["OK"]
-        </div>
+    <div style="background:#28a745;color:white;padding:10px 14px;border-radius:8px;margin-bottom:12px;">
+        ✔ @TempData["OK"]
+    </div>
 }
-<a href="@Url.Action("EnviarReporte", "Reporte")" class="btn btn-success">
-    📧 Enviar Informe
-</a>
-<div class="container mt-4">
 
-    <h3>📊 KPI Gerencial Embarques</h3>
+<div class="page-header">
+    <div>
+        <h3>📊 KPI Gerencial Embarques</h3>
+        <div class="page-subtitle">
+            Última actualización: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+        </div>
+    </div>
 
-    <small style="color:#6b7280;">
-        Última actualización: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
-    </small>
+    <div class="top-actions">
+        <a asp-controller="Reporte"
+           asp-action="EnviarReporte"
+           asp-route-fechaInicio="@ViewBag.FechaInicio"
+           asp-route-fechaFin="@ViewBag.FechaFin"
+           asp-route-marcaFiltro="@ViewBag.MarcaFiltro"
+           class="btn btn-success">
+            📧 Enviar Informe
+        </a>
+    </div>
+</div>
 
-    <!-- 🔍 FILTRO -->
-    <form method="get" class="row g-2 mt-3 mb-4">
-
+<div class="filter-box">
+    <form method="get" class="row g-3 align-items-end">
         <div class="col-md-3">
             <label>Fecha Inicio</label>
             <input type="date" name="fechaInicio" value="@ViewBag.FechaInicio" class="form-control" />
@@ -96,127 +207,150 @@
             <input type="date" name="fechaFin" value="@ViewBag.FechaFin" class="form-control" />
         </div>
 
-        <div class="col-md-3 d-flex align-items-end">
+        <div class="col-md-3">
+            <label>Marca</label>
+            <select name="marcaFiltro" class="form-control">
+                <option value="">-- Todas las marcas --</option>
+                @if (ViewBag.MarcasCombo != null)
+                {
+                    foreach (var m in ViewBag.MarcasCombo)
+                    {
+                        if ((ViewBag.MarcaFiltro ?? "") == m.Nombre)
+                        {
+                            <option value="@m.Nombre" selected>@m.Nombre</option>
+                        }
+                        else
+                        {
+                            <option value="@m.Nombre">@m.Nombre</option>
+                        }
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-2">
             <button type="submit" class="btn btn-primary w-100">
                 🔍 Filtrar
             </button>
         </div>
 
-        <div class="col-md-3 d-flex align-items-end">
+        <div class="col-md-1">
             <a asp-action="Index" class="btn btn-secondary w-100">
-                🔄 Limpiar
+                Limpiar
             </a>
         </div>
-
     </form>
+</div>
 
-    @if (ViewBag.Total == 0)
+@if (ViewBag.Total == 0)
+{
+    <div class="alert alert-info">
+        📭 No existen trámites registrados en este rango.
+    </div>
+}
+else
+{
+    string colorOTIF = ViewBag.OTIF >= 90 ? "verde" :
+                       ViewBag.OTIF >= 80 ? "amarillo" : "rojo";
+
+    <div class="row g-3">
+
+        <div class="col-lg col-md-6">
+            <div class="kpi-card azul">
+                <h1>@ViewBag.Total</h1>
+                <p>Total Trámites</p>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-6">
+            <div class="kpi-card @colorOTIF">
+                <h1>@ViewBag.OTIF %</h1>
+                <p>OTIF</p>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-6">
+            <div class="kpi-card amarillo">
+                <h1>@ViewBag.EnTransito</h1>
+                <p>En tránsito</p>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-6">
+            <div class="kpi-card rojo">
+                <h1>@ViewBag.Retrasados</h1>
+                <p>Retrasados</p>
+            </div>
+        </div>
+
+        <div class="col-lg col-md-6">
+            <div class="kpi-card gris">
+                <h1>@ViewBag.Cerrados</h1>
+                <p>Trámites Cerrados</p>
+            </div>
+        </div>
+
+    </div>
+
+    @if (ViewBag.Retrasados > 0)
     {
-        <div class="alert alert-info">
-            📭 No existen embarques registrados en este rango
+        <div class="alert alert-danger mt-4">
+            🚨 Hay @ViewBag.Retrasados trámites retrasados.
         </div>
     }
-    else
+
+    @if (ViewBag.Marcas != null && ViewBag.Marcas.Count > 0)
     {
-        string colorOTIF = ViewBag.OTIF >= 90 ? "verde" :
-        ViewBag.OTIF >= 80 ? "amarillo" : "rojo";
-
-        <!-- KPI PRINCIPALES -->
-        <div class="row g-3">
-
-            <div class="col-md-3">
-                <div class="kpi-card azul">
-                    <h1>@ViewBag.Total</h1>
-                    <p>Total Embarques</p>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="kpi-card @colorOTIF">
-                    <h1>@ViewBag.OTIF %</h1>
-                    <p>OTIF</p>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="kpi-card amarillo">
-                    <h1>@ViewBag.EnTransito</h1>
-                    <p>En tránsito</p>
-                </div>
-            </div>
-
-            <div class="col-md-3">
-                <div class="kpi-card rojo">
-                    <h1>@ViewBag.Retrasados</h1>
-                    <p>Retrasados</p>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- KPI STATUS -->
-        <div class="row g-3 mt-2">
-
-            <div class="col-md-6">
-                <div class="kpi-card azul">
-                    <h1>@ViewBag.Abiertos</h1>
-                    <p>Embarques Abiertos</p>
-                </div>
-            </div>
-
-            <div class="col-md-6">
-                <div class="kpi-card gris">
-                    <h1>@ViewBag.Cerrados</h1>
-                    <p>Embarques Cerrados</p>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- ALERTAS -->
-        @if (ViewBag.Retrasados > 0)
-        {
-            <div class="alert alert-danger mt-4">
-                🚨 Hay @ViewBag.Retrasados embarques retrasados
-            </div>
-        }
-
-        <!-- GRÁFICO -->
-        @if (ViewBag.Marcas != null && ViewBag.Marcas.Count > 0)
-        {
-            <div class="card-box mt-4">
-                <h5>📊 Retrasos por Marca</h5>
+        <div class="card-box">
+            <h5 class="section-title">📊 Retrasos por Marca</h5>
+            <div class="chart-wrap">
                 <canvas id="graficoMarcas"></canvas>
             </div>
+            <div class="mini-note mt-2">
+                El gráfico muestra la cantidad de retrasos por marca dentro del filtro aplicado.
+            </div>
+        </div>
 
-            <script>
-                var ctx = document.getElementById('graficoMarcas');
+        <script>
+            var ctx = document.getElementById('graficoMarcas');
 
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: @Html.Raw(Json.Serialize(ViewBag.Marcas)),
-                        datasets: [{
-                            label: 'Retrasos',
-                            data: @Html.Raw(Json.Serialize(ViewBag.MarcasValores)),
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(ViewBag.Marcas)),
+                    datasets: [{
+                        label: 'Retrasos',
+                        data: @Html.Raw(Json.Serialize(ViewBag.MarcasValores)),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                stepSize: 1,
+                                callback: function (value) {
+                                    return Number.isInteger(value) ? value : '';
+                                }
+                            }
+                        }
                     }
-                });
-            </script>
-        }
+                }
+            });
+        </script>
+    }
 
-        <!-- RANKING -->
-        @if (ViewBag.Ranking != null)
-        {
-            <div class="card-box">
+    @if (ViewBag.Ranking != null)
+    {
+        <div class="card-box">
+            <h5 class="section-title">🏆 Ranking de Marcas</h5>
 
-                <h5>🏆 Ranking de Marcas</h5>
-
-                <table class="table table-bordered table-sm mt-3">
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm mt-3 ranking-table">
                     <thead>
                         <tr>
                             <th>#</th>
@@ -239,11 +373,11 @@
 
                             <tr>
                                 <td>@pos</td>
-                                <td>@r.Marca</td>
+                                <td><strong>@r.Marca</strong></td>
                                 <td>@r.Total</td>
                                 <td>@r.Retrasos</td>
                                 <td class="@color">
-                                    <strong>@Math.Round(r.OTIF, 1)%</strong>
+                                    <strong>@Math.Round(r.OTIF, 0)%</strong>
                                 </td>
                             </tr>
 
@@ -251,9 +385,57 @@
                         }
                     </tbody>
                 </table>
-
             </div>
-        }
+        </div>
     }
 
-</div>
+    @if (ViewBag.ResumenPorMarca != null)
+    {
+        <div class="card-box">
+            <h5 class="section-title">📦 Resumen por Marca / ETA</h5>
+            <div class="mini-note mb-3">
+                Ordenado de la fecha más cercana a la más lejana.
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm mt-2 resumen-table">
+                    <thead>
+                        <tr>
+                            <th>Marca</th>
+                            <th>Shipment</th>
+                            <th>ETA</th>
+                            <th>Departure</th>
+                            <th>Destino</th>
+                            <th>Naviera</th>
+                            <th>Cantidad</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in ViewBag.ResumenPorMarca)
+                        {
+                            string estadoClass = item.Estado == "Entregado"
+                            ? "estado-entregado"
+                            : item.Estado == "Retrasado"
+                            ? "estado-retrasado"
+                            : "estado-transito";
+
+                            <tr>
+                                <td><strong>@item.Marca</strong></td>
+                                <td>@item.Shipment</td>
+                                <td>@(item.ETA != null ? ((DateTime)item.ETA).ToString("dd/MM/yyyy") : "-")</td>
+                                <td>@(item.Departure != null ? ((DateTime)item.Departure).ToString("dd/MM/yyyy") : "-")</td>
+                                <td>@item.Destino</td>
+                                <td>@item.Naviera</td>
+                                <td>@item.Cantidad</td>
+                                <td>
+                                    <span class="estado-pill @estadoClass">@item.Estado</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+}

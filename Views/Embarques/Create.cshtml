@@ -1,9 +1,18 @@
 ﻿@model Seguimiento.Models.Embarque
+@using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     bool esEdicion = Model != null && Model.Id > 0;
+    bool soloLectura = ViewBag.EsSoloLectura != null && (bool)ViewBag.EsSoloLectura;
+    string mensajeCierre = ViewBag.MensajeCierre as string ?? "";
 
-    ViewData["Title"] = esEdicion ? "Editar Embarque" : "Nuevo Embarque";
+    bool esSubtramite = ViewBag.EsSubtramite != null && (bool)ViewBag.EsSubtramite;
+    int? embarquePadreId = ViewBag.EmbarquePadreId as int?;
+    int? ordenSubtramite = ViewBag.OrdenSubtramite as int?;
+    string tituloFormulario = ViewBag.TituloFormulario as string
+                              ?? (esEdicion ? "Editar Embarque" : "Nuevo Embarque");
+
+    ViewData["Title"] = tituloFormulario;
 
     var preguntas = (ViewBag.Preguntas as List<Seguimiento.Models.Pregunta> ?? new List<Seguimiento.Models.Pregunta>())
                     .OrderBy(p => p.Orden)
@@ -15,11 +24,43 @@
     var respuestas = ViewBag.Respuestas as List<Seguimiento.Models.Respuesta> ?? new List<Seguimiento.Models.Respuesta>();
     var modelosSeleccionados = ViewBag.ModelosSeleccionados as List<Seguimiento.Models.EmbarqueModelo> ?? new List<Seguimiento.Models.EmbarqueModelo>();
 
-    var modelosJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ModelosJson);
+    var respuestasPrecargadasSubtramite = ViewBag.RespuestasPrecargadasSubtramite as Dictionary<string, string>
+                                          ?? new Dictionary<string, string>();
+
+    var modelosJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ModelosJson ?? new List<object>());
+    var modelosSeleccionadosJson = Newtonsoft.Json.JsonConvert.SerializeObject(modelosSeleccionados);
 
     string GetValor(int preguntaId)
     {
-        return respuestas.FirstOrDefault(r => r.PreguntaId == preguntaId)?.Valor ?? "";
+        var valorExistente = respuestas.FirstOrDefault(r => r.PreguntaId == preguntaId)?.Valor;
+        if (!string.IsNullOrWhiteSpace(valorExistente))
+            return valorExistente;
+
+        if (esSubtramite && !esEdicion)
+        {
+            var pregunta = preguntas.FirstOrDefault(p => p.Id == preguntaId);
+            var nombrePregunta = (pregunta?.Nombre ?? "").Trim().ToUpper();
+
+            if (nombrePregunta.Contains("STATUS") && respuestasPrecargadasSubtramite.ContainsKey("STATUS"))
+                return respuestasPrecargadasSubtramite["STATUS"];
+
+            if (nombrePregunta.Contains("BRAND") && respuestasPrecargadasSubtramite.ContainsKey("BRAND"))
+                return respuestasPrecargadasSubtramite["BRAND"];
+
+            if (nombrePregunta.Contains("SHIPMENT") && respuestasPrecargadasSubtramite.ContainsKey("SHIPMENT"))
+                return respuestasPrecargadasSubtramite["SHIPMENT"];
+
+            if (nombrePregunta.Contains("DESTINATION PORT") && respuestasPrecargadasSubtramite.ContainsKey("DESTINATION PORT"))
+                return respuestasPrecargadasSubtramite["DESTINATION PORT"];
+
+            if (nombrePregunta.Contains("INCOTERM") && respuestasPrecargadasSubtramite.ContainsKey("INCOTERM"))
+                return respuestasPrecargadasSubtramite["INCOTERM"];
+
+            if (nombrePregunta.Contains("SHIPPING COMPANY") && respuestasPrecargadasSubtramite.ContainsKey("SHIPPING COMPANY"))
+                return respuestasPrecargadasSubtramite["SHIPPING COMPANY"];
+        }
+
+        return "";
     }
 
     int GetCantidadModelo(int modeloId)
@@ -27,16 +68,12 @@
         return modelosSeleccionados.FirstOrDefault(m => m.ModeloId == modeloId)?.Cantidad ?? 0;
     }
 
-    var indexQty = preguntas.FindIndex(p => p.Nombre.Trim().ToUpper() == "QTY");
+    var indexQty = preguntas.FindIndex(p => (p.Nombre ?? "").Trim().ToUpper() == "QTY");
 
-    // 🔥 CAMPOS FECHA POR POSICIÓN
-    // Visible 30 = i 29
-    // Visible 31 = i 30
-    var indicesFecha = new List<int> { 7, 8, 13, 14, 17, 18, 19, 25, 26, 28, 29, 30, 32, 33, 34, 35 };
+    var indicesFecha = new List<int> { 7, 8, 13, 14, 17, 18, 19, 25, 26, 28, 29, 30, 33, 34, 35 };
 }
 
 <style>
-    /* ❗ ICONO DE CAMPO FALTANTE */
     .campo-alerta {
         position: relative;
     }
@@ -58,7 +95,6 @@
             justify-content: center;
         }
 
-    /* 🎨 COLORES SUAVES */
     .bg-soft-danger {
         background-color: #f8d7da !important;
         color: #842029 !important;
@@ -80,6 +116,7 @@
     td, th {
         min-width: 120px;
         text-align: center;
+        vertical-align: middle;
     }
 
     input, select {
@@ -97,144 +134,178 @@
         color: white;
         font-weight: bold;
     }
+
+    .subtramite-box {
+        border-left: 5px solid #0d6efd;
+        background: #eef5ff;
+        padding: 12px 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .subtramite-badge {
+        font-size: 0.9rem;
+        padding: 6px 10px;
+        border-radius: 20px;
+    }
 </style>
 
 <div class="container-fluid mt-3">
 
-    <h4>
-        @(esEdicion ? "✏️ Editando Embarque" : "🚢 Nuevo Embarque")
-    </h4>
+    <h4>@tituloFormulario</h4>
+
+    @if (esSubtramite)
+    {
+        <div class="subtramite-box">
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="badge bg-primary subtramite-badge">SUBTRÁMITE</span>
+                <span><strong>Trámite principal:</strong> @(ViewBag.EmbarquePadreShipment ?? ("#" + embarquePadreId))</span>
+                @if (ordenSubtramite.HasValue)
+                {
+                    <span><strong>Orden:</strong> @ordenSubtramite</span>
+                }
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(mensajeCierre))
+    {
+        <div class="alert alert-danger mt-2">
+            🔒 @mensajeCierre
+        </div>
+    }
 
     <form asp-action="@(esEdicion ? "Edit" : "Create")" method="post">
 
-        <input type="hidden" id="departureConfirmado" name="departureConfirmado" value="@Model.DepartureConfirmado.ToString().ToLower()" />
-        <input type="hidden" id="etaConfirmado" name="etaConfirmado" value="@Model.EtaConfirmado.ToString().ToLower()" />
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" id="departureConfirmado" name="departureConfirmado" value="@((Model?.DepartureConfirmado ?? false).ToString().ToLower())" />
+        <input type="hidden" id="etaConfirmado" name="etaConfirmado" value="@((Model?.EtaConfirmado ?? false).ToString().ToLower())" />
+
+        <input type="hidden" name="EsSubtramite" value="@esSubtramite.ToString().ToLower()" />
+        <input type="hidden" name="EmbarquePadreId" value="@(embarquePadreId?.ToString() ?? "")" />
+        <input type="hidden" name="OrdenSubtramite" value="@(ordenSubtramite?.ToString() ?? "")" />
 
         @if (esEdicion)
         {
-                <input type="hidden" name="id" value="@Model.Id" />
+            <input type="hidden" name="id" value="@Model.Id" />
         }
 
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
         <div class="table-responsive">
-
             <table class="table table-bordered table-sm" id="tabla">
-
                 <thead>
-
                     <tr class="table-dark text-center" id="headerTipos">
                         @for (int i = 0; i < preguntas.Count; i++)
                         {
-                                <th rowspan="2">@(i + 1). @preguntas[i].Nombre</th>
+                            <th rowspan="2">@(i + 1). @preguntas[i].Nombre</th>
                         }
                     </tr>
 
                     <tr class="table-secondary text-center" id="headerModelos"></tr>
-
                 </thead>
 
                 <tbody>
                     <tr id="dataRow">
-
                         @for (int i = 0; i < preguntas.Count; i++)
                         {
                             var p = preguntas[i];
-                            var nombre = p.Nombre.ToUpper();
+                            var nombre = (p.Nombre ?? "").ToUpper();
                             var ops = opciones.Where(o => o.PreguntaId == p.Id && o.Activo).ToList();
                             var valor = GetValor(p.Id);
 
-                                <td>
-
+                            <td>
                                 @if (nombre.Contains("BRAND"))
                                 {
-                                            <select id="marcaSelect" name="pregunta_@p.Id" class="form-control">
-                                                <option value="">Seleccione</option>
+                                    <select id="marcaSelect" name="pregunta_@p.Id" class="form-control" @(soloLectura ? "disabled" : null)>
+                                        <option value="">Seleccione</option>
                                         @foreach (var m in marcas)
                                         {
-                                                        <option value="@m.Value" selected="@(m.Value == valor)">
-                                                @m.Text
-                                                        </option>
+                                            if (m.Value == valor)
+                                            {
+                                                <option value="@m.Value" selected>@m.Text</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@m.Value">@m.Text</option>
+                                            }
                                         }
-                                            </select>
+                                    </select>
                                 }
                                 else if (indicesFecha.Contains(i))
                                 {
-                                    @* DEPARTURE *@
-                                    if (i == 7)
+                                    if (nombre.Contains("INGRESO DE PESOS"))
                                     {
-                                                    <input type="date" id="departureDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                        <input type="date" id="fechaIngresoPesosTerminal" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "disabled" : null) />
                                     }
-                                    @* ETA *@
-                                    else if (i == 8)
+                                    else if (nombre.Contains("SALIDA AUTORIZADA"))
                                     {
-                                                    <input type="date" id="etaDate" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                        <input type="date" id="fechaSalidaAutorizada" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "disabled" : null) />
                                     }
-                                    @* FECHA INGRESO DE PESOS TERMINAL - visible 30 *@
-                                    else if (i == 29)
+                                    else if (nombre.Contains("DEPARTURE"))
                                     {
-                                                    <input type="date" id="fechaIngresoPesosTerminal" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                        <input type="date" id="departureDate" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "disabled" : null) />
                                     }
-                                    @* FECHA SALIDA AUTORIZADA - visible 31 *@
-                                    else if (i == 30)
+                                    else if (nombre.Contains("ETA"))
                                     {
-                                                    <input type="date" id="fechaSalidaAutorizada" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                        <input type="date" id="etaDate" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "disabled" : null) />
                                     }
                                     else
                                     {
-                                                    <input type="date" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                        <input type="date" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "disabled" : null) />
                                     }
                                 }
-                                @* TRÁNSITO *@
                                 else if (i == 9)
                                 {
-                                            <input type="text" id="transitoDias" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                    <input type="text" id="transitoDias" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
                                 }
-                                @* DIAS ENTRE INGRESO Y SALIDA - visible 32 *@
                                 else if (i == 31)
                                 {
-                                            <input type="text" id="diasEntreIngresoSalida" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                    <input type="text" id="diasEntreIngresoSalida" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
                                 }
                                 else if (ops.Any())
                                 {
-                                            <select name="pregunta_@p.Id" class="form-control">
-                                                <option value="">Seleccione</option>
+                                    <select name="pregunta_@p.Id" class="form-control" @(soloLectura ? "disabled" : null)>
+                                        <option value="">Seleccione</option>
                                         @foreach (var o in ops)
                                         {
-                                                        <option selected="@(o.Valor == valor)">
-                                                @o.Valor
-                                                        </option>
+                                            if (o.Valor == valor)
+                                            {
+                                                <option selected>@o.Valor</option>
+                                            }
+                                            else
+                                            {
+                                                <option>@o.Valor</option>
+                                            }
                                         }
-                                            </select>
+                                    </select>
                                 }
                                 else if (nombre == "QTY")
                                 {
-                                            <input id="totalQty" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
+                                    <input id="totalQty" name="pregunta_@p.Id" value="@valor" class="form-control" readonly />
                                 }
                                 else
                                 {
-                                            <input type="text" name="pregunta_@p.Id" value="@valor" class="form-control" />
+                                    <input type="text" name="pregunta_@p.Id" value="@valor" class="form-control" @(soloLectura ? "readonly" : null) />
                                 }
-
-                                </td>
+                            </td>
                         }
-
                     </tr>
                 </tbody>
-
             </table>
-
         </div>
 
-        <button class="btn btn-primary mt-3">
+        <button type="submit" class="btn btn-primary mt-3" @(soloLectura ? "disabled" : null)>
             @(esEdicion ? "Actualizar" : "Guardar")
         </button>
 
         @if (esEdicion)
         {
-                <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
-                    📊 Auditoría
-                </button>
+            <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
+                📊 Auditoría
+            </button>
         }
-
     </form>
 </div>
 
@@ -242,81 +313,76 @@
 {
     var auditoria = ViewBag.Auditoria as List<Seguimiento.Models.AuditoriaEmbarque> ?? new List<Seguimiento.Models.AuditoriaEmbarque>();
 
-        <div class="modal fade" id="modalAuditoria">
-            <div class="modal-dialog modal-xl">
-                <div class="modal-content">
+    <div class="modal fade" id="modalAuditoria" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
 
-                    <div class="modal-header bg-dark text-white">
-                        <h5 class="modal-title">📊 Historial del Embarque</h5>
-                    </div>
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">📊 Historial del Embarque</h5>
+                </div>
 
-                    <div class="modal-body">
-
+                <div class="modal-body">
                     @if (!auditoria.Any())
                     {
-                                <p class="text-muted">No hay registros de auditoría.</p>
+                        <p class="text-muted">No hay registros de auditoría.</p>
                     }
                     else
                     {
-                                <table class="table table-sm table-bordered table-hover">
-                                    <thead class="table-dark text-center">
-                                        <tr>
-                                            <th>Fecha</th>
-                                            <th>Usuario</th>
-                                            <th>Acción</th>
-                                            <th>Detalle</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                        <table class="table table-sm table-bordered table-hover">
+                            <thead class="table-dark text-center">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Usuario</th>
+                                    <th>Acción</th>
+                                    <th>Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 @foreach (var a in auditoria)
                                 {
-                                                <tr>
-                                                    <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
-                                                    <td>@a.Usuario</td>
-                                                    <td>
+                                    <tr>
+                                        <td>@a.Fecha.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>@a.Usuario</td>
+                                        <td>
                                             @if (a.Accion == "CREACIÓN")
                                             {
-                                                                <span class="badge bg-success">CREACIÓN</span>
+                                                <span class="badge bg-success">CREACIÓN</span>
                                             }
                                             else if (a.Accion == "MODIFICACIÓN")
                                             {
-                                                                <span class="badge bg-warning text-dark">MODIFICACIÓN</span>
+                                                <span class="badge bg-warning text-dark">MODIFICACIÓN</span>
                                             }
                                             else
                                             {
-                                                                <span class="badge bg-secondary">@a.Accion</span>
+                                                <span class="badge bg-secondary">@a.Accion</span>
                                             }
-                                                    </td>
-                                                    <td>@a.Detalle</td>
-                                                </tr>
+                                        </td>
+                                        <td>@a.Detalle</td>
+                                    </tr>
                                 }
-                                    </tbody>
-                                </table>
+                            </tbody>
+                        </table>
                     }
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                    </div>
-
                 </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+
             </div>
         </div>
+    </div>
 }
 
 <script>
-    // =============================
-    // 🔵 ESTADO GLOBAL CONFIRMACIÓN
-    // =============================
     let departureConfirmado = false;
     let etaConfirmado = false;
     let modelos = @Html.Raw(modelosJson);
+    let modelosExistentes = @Html.Raw(modelosSeleccionadosJson);
     let indexQty = @indexQty;
+    let soloLectura = @(soloLectura ? "true" : "false");
 
-    // 🔥 DISPARAR AUTOMÁTICO EN EDITAR
     window.onload = function () {
-
         departureConfirmado = document.getElementById("departureConfirmado")?.value?.toLowerCase() === "true";
         etaConfirmado = document.getElementById("etaConfirmado")?.value?.toLowerCase() === "true";
 
@@ -331,7 +397,6 @@
     };
 
     document.getElementById("marcaSelect")?.addEventListener("change", function () {
-
         let marcaId = parseInt(this.value);
 
         let filtrados = modelos.filter(m => m.MarcaId === marcaId);
@@ -366,7 +431,6 @@
         );
 
         listaGrupos.forEach(grupo => {
-
             let modelosGrupo = grupo.modelos;
 
             if (!modelosGrupo || modelosGrupo.length === 0) return;
@@ -379,7 +443,6 @@
             headerTipos.insertBefore(thGrupo, refHeader);
 
             modelosGrupo.forEach(m => {
-
                 let th = document.createElement("th");
                 th.innerText = m.Nombre;
                 th.classList.add("modelo-dinamico");
@@ -394,35 +457,41 @@
                 input.name = "modelo_" + m.Id;
                 input.className = "form-control modelo-input";
 
-                let existentes = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(modelosSeleccionados));
-                let found = existentes.find(x => x.ModeloId == m.Id);
+                let found = modelosExistentes.find(x => x.ModeloId == m.Id);
                 if (found) input.value = found.Cantidad;
+
+                if (soloLectura) {
+                    input.disabled = true;
+                }
 
                 td.appendChild(input);
                 dataRow.insertBefore(td, refData);
-
             });
-
         });
 
+        actualizarTotalQty();
         evaluarReglas();
     });
 
-    // 🔥 SUMA AUTOMÁTICA
     document.addEventListener("input", function (e) {
         if (e.target.classList.contains("modelo-input")) {
-            let total = 0;
-            document.querySelectorAll(".modelo-input").forEach(i => {
-                let val = parseInt(i.value);
-                if (!isNaN(val)) total += val;
-            });
-            document.getElementById("totalQty").value = total;
+            actualizarTotalQty();
         }
 
         evaluarReglas();
     });
 
-    // 🔥 CÁLCULO TRANSITO
+    function actualizarTotalQty() {
+        let total = 0;
+        document.querySelectorAll(".modelo-input").forEach(i => {
+            let val = parseInt(i.value);
+            if (!isNaN(val)) total += val;
+        });
+
+        let totalQty = document.getElementById("totalQty");
+        if (totalQty) totalQty.value = total;
+    }
+
     function calcularTransito() {
         let dep = document.getElementById("departureDate")?.value;
         let eta = document.getElementById("etaDate")?.value;
@@ -437,7 +506,6 @@
         evaluarReglas();
     }
 
-    // 🔥 NUEVO: CÁLCULO DIAS ENTRE INGRESO Y SALIDA
     function calcularDiasEntreIngresoSalida() {
         let ingreso = document.getElementById("fechaIngresoPesosTerminal")?.value;
         let salida = document.getElementById("fechaSalidaAutorizada")?.value;
@@ -456,14 +524,11 @@
     }
 
     document.addEventListener("change", function (e) {
+        if (soloLectura) return;
 
         const id = e.target.id;
 
-        // =============================
-        // 🚢 DEPARTURE
-        // =============================
         if (id === "departureDate") {
-
             if (e.target.value) {
                 let confirmacion = confirm("¿La fecha DEPARTURE está confirmada?");
                 departureConfirmado = confirmacion;
@@ -476,11 +541,7 @@
             evaluarReglas();
         }
 
-        // =============================
-        // 🚢 ETA
-        // =============================
         if (id === "etaDate") {
-
             if (e.target.value) {
                 let confirmacion = confirm("¿La fecha ETA está confirmada?");
                 etaConfirmado = confirmacion;
@@ -493,19 +554,14 @@
             evaluarReglas();
         }
 
-        // =============================
-        // 🆕 FECHAS NUEVAS
-        // =============================
         if (id === "fechaIngresoPesosTerminal" || id === "fechaSalidaAutorizada") {
             calcularDiasEntreIngresoSalida();
             evaluarReglas();
         }
     });
 
-    // =====================================================
-    // 🔥🔥🔥 MOTOR DE VALIDACIONES
-    // =====================================================
     function evaluarReglas() {
+        if (soloLectura) return;
 
         let hoy = new Date();
 
@@ -551,11 +607,7 @@
             return null;
         }
 
-        // =============================
-        // 🔴 DESPUÉS DE DEPARTURE (1 DÍA)
-        // =============================
         if (departure && dias(hoy, departure) >= 1) {
-
             if (!get(4)?.value) rojo(get(4));
             if (!get(6)?.value) rojo(get(6));
 
@@ -564,26 +616,16 @@
             });
         }
 
-        // =============================
-        // 🔴 DESPUÉS DE DEPARTURE (5 DÍAS)
-        // =============================
         if (departure && dias(hoy, departure) >= 5) {
-
             [14, 15, 16, 17, 18].forEach(i => {
                 if (!get(i)?.value) rojo(get(i));
             });
         }
 
-        // =============================
-        // 🔴 DESPUÉS DE DEPARTURE (7 DÍAS)
-        // =============================
         if (departure && dias(hoy, departure) >= 7) {
             if (!get(19)?.value) rojo(get(19));
         }
 
-        // =============================
-        // 🔴 DEPENDENCIA INVOICE
-        // =============================
         let invoice = getFecha(14);
 
         if (invoice && dias(hoy, invoice) >= 5) {
@@ -594,20 +636,13 @@
             if (!get(21)?.value) rojo(get(21));
         }
 
-        // =============================
-        // 🔴 SUBCATEGORIA
-        // =============================
         let subcat = getFecha(21);
 
         if (subcat && dias(hoy, subcat) >= 5) {
             if (!get(22)?.value) rojo(get(22));
         }
 
-        // =============================
-        // 🔴 ANTES DE ETA
-        // =============================
         if (eta) {
-
             if (dias(eta, hoy) <= 5) {
                 [23, 24, 25, 27, 28].forEach(i => {
                     if (!get(i)?.value) rojo(get(i));
@@ -623,9 +658,6 @@
             }
         }
 
-        // =============================
-        // 🟢 CONFIRMACIÓN USUARIO
-        // =============================
         if (departureConfirmado) {
             verde(document.getElementById("departureDate"));
         }
@@ -634,12 +666,8 @@
             verde(document.getElementById("etaDate"));
         }
 
-        // =============================
-        // 🔥 CAMPOS VACÍOS GENERALES
-        // =============================
         document.querySelectorAll("#dataRow input, #dataRow select").forEach(el => {
-
-            if (el.type === "hidden" || el.readOnly) return;
+            if (el.type === "hidden" || el.readOnly || el.disabled) return;
 
             let valor = el.value?.trim();
 
@@ -652,17 +680,17 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-
         let statusInput = document.querySelector("#dataRow td:first-child select, #dataRow td:first-child input");
 
         if (!statusInput) {
+            calcularTransito();
+            calcularDiasEntreIngresoSalida();
             return;
         }
 
         let statusValor = statusInput.value?.toLowerCase().trim();
 
-        if (statusValor === "closed") {
-
+        if (statusValor === "closed" || statusValor === "cerrado" || statusValor === "entregado" || soloLectura) {
             document.querySelectorAll("input, select, textarea").forEach(e => {
                 if (e.type !== "hidden") {
                     e.disabled = true;
@@ -672,14 +700,18 @@
             let btn = document.querySelector("button[type='submit']");
             if (btn) btn.disabled = true;
 
-            let alerta = document.createElement("div");
-            alerta.className = "alert alert-danger mt-2";
-            alerta.innerText = "🔒 Embarque cerrado - no editable";
+            if (!document.getElementById("alertaCierreJs") && !@(!string.IsNullOrWhiteSpace(mensajeCierre) ? "true" : "false")) {
+                let alerta = document.createElement("div");
+                alerta.id = "alertaCierreJs";
+                alerta.className = "alert alert-danger mt-2";
+                alerta.innerText = "🔒 Embarque cerrado - no editable";
 
-            document.querySelector(".container-fluid").prepend(alerta);
+                document.querySelector(".container-fluid").prepend(alerta);
+            }
         }
 
         calcularTransito();
         calcularDiasEntreIngresoSalida();
+        actualizarTotalQty();
     });
 </script>

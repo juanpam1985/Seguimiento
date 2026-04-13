@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Seguimiento.Models
 {
@@ -11,7 +12,7 @@ namespace Seguimiento.Models
         public DateTime FechaRegistro { get; set; }
 
         // =========================
-        // 🔥 AUDITORÍA (NUEVO)
+        // AUDITORÍA
         // =========================
         public string? CreadoPor { get; set; }
         public DateTime? FechaCreacion { get; set; }
@@ -20,13 +21,27 @@ namespace Seguimiento.Models
         public DateTime? FechaModificacion { get; set; }
 
         // =========================
-        // RELACIONES (si ya las tienes, déjalas)
+        // CONFIRMACIONES
+        // =========================
+        public bool? DepartureConfirmado { get; set; } = false;
+        public bool? EtaConfirmado { get; set; } = false;
+
+        // =========================
+        // SUBTRÁMITES
+        // =========================
+        public bool EsSubtramite { get; set; } = false;
+        public int? EmbarquePadreId { get; set; }
+        public int? OrdenSubtramite { get; set; }
+
+        // =========================
+        // RELACIONES
         // =========================
         public Empresa? Empresa { get; set; }
 
+        public Embarque? EmbarquePadre { get; set; }
+        public ICollection<Embarque>? Subtramites { get; set; } = new List<Embarque>();
+
         public ICollection<EmbarqueModelo>? EmbarqueModelos { get; set; }
         public ICollection<Respuesta>? Respuestas { get; set; }
-        public bool? DepartureConfirmado { get; set; } = false;
-        public bool? EtaConfirmado { get; set; } = false;
     }
 }
