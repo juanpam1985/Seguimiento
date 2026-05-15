@@ -1,0 +1,66 @@
+﻿@model Seguimiento.Models.Color
+
+@{
+    ViewData["Title"] = "Nuevo Color";
+}
+
+<div class="container mt-4">
+    <div class="mb-3">
+        <h2 class="fw-bold mb-1">Nuevo Color</h2>
+        <p class="text-muted mb-0">Registro de color para packing list</p>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label asp-for="Codigo" class="form-label fw-semibold"></label>
+                        <input asp-for="Codigo" class="form-control" />
+                        <span asp-validation-for="Codigo" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Nombre" class="form-label fw-semibold"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="NombreLocal" class="form-label fw-semibold"></label>
+                        <input asp-for="NombreLocal" class="form-control" />
+                        <span asp-validation-for="NombreLocal" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="form-check mt-4 pt-2">
+                            <input asp-for="Activo" class="form-check-input" />
+                            <label asp-for="Activo" class="form-check-label"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

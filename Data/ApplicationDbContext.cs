@@ -24,10 +24,11 @@ namespace Seguimiento.Data
         public DbSet<AuditoriaEmbarque> AuditoriaEmbarques { get; set; }
         public DbSet<MarcaEmpresa> MarcaEmpresas { get; set; }
         public DbSet<Rol> Roles { get; set; }
-
+        public DbSet<PackingList> PackingLists { get; set; }
+        public DbSet<PackingListDetalle> PackingListDetalles { get; set; }
         public DbSet<Modulo> Modulos { get; set; }
         public DbSet<RolPermiso> RolPermisos { get; set; }
-
+        public DbSet<Color> Colores { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

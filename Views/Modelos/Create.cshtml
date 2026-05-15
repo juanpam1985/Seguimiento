@@ -5,7 +5,6 @@
 }
 
 <style>
-
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -30,7 +29,7 @@
         border-radius: 12px;
         padding: 35px;
         box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        max-width: 600px;
+        max-width: 800px;
         margin: auto;
     }
 
@@ -50,26 +49,22 @@
         display: flex;
         gap: 10px;
         margin-top: 25px;
+        flex-wrap: wrap;
     }
-
 </style>
 
 <div class="container mt-4">
 
     <div class="page-header">
-
         <h3>🚗 Crear Modelo</h3>
 
         <a href="/Modelos" class="btn btn-secondary">
             ← Volver
         </a>
-
     </div>
 
     <div class="card-form">
-
         <form asp-controller="Modelos" asp-action="Create" method="post">
-
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="All" class="text-danger"></div>
@@ -78,70 +73,60 @@
                 Información del Modelo
             </div>
 
-            <!-- MARCA -->
-            <div class="mb-3">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Marca</label>
+                    <select asp-for="MarcaId" class="form-control" asp-items="ViewBag.MarcaId">
+                        <option value="">Seleccione una marca</option>
+                    </select>
+                    <span asp-validation-for="MarcaId" class="text-danger"></span>
+                </div>
 
-                <label class="form-label">
-                    Marca
-                </label>
-
-                <select asp-for="MarcaId"
-                        class="form-control"
-                        asp-items="ViewBag.MarcaId">
-
-                    <option value="">Seleccione una marca</option>
-
-                </select>
-
-                <span asp-validation-for="MarcaId" class="text-danger"></span>
-
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tipo de Modelo</label>
+                    <select asp-for="TipoModeloId" class="form-control" asp-items="ViewBag.TipoModeloId">
+                        <option value="">-- Seleccione Tipo --</option>
+                    </select>
+                    <span asp-validation-for="TipoModeloId" class="text-danger"></span>
+                </div>
             </div>
 
-            <!-- 🔥 TIPO MODELO -->
             <div class="mb-3">
-
-                <!-- ✔ SOLO CAMBIÉ ESTA LÍNEA -->
-                <label class="form-label">
-                    Tipo de Modelo
-                </label>
-
-                <select asp-for="TipoModeloId"
-                        class="form-control"
-                        asp-items="ViewBag.TipoModeloId">
-
-                    <option value="">-- Seleccione Tipo --</option>
-
-                </select>
-
-                <span asp-validation-for="TipoModeloId" class="text-danger"></span>
-
-            </div>
-
-            <!-- NOMBRE -->
-            <div class="mb-3">
-
-                <label class="form-label">
-                    Nombre del Modelo
-                </label>
-
+                <label class="form-label">Nombre del Modelo</label>
                 <input asp-for="Nombre" class="form-control" />
-
                 <span asp-validation-for="Nombre" class="text-danger"></span>
-
             </div>
 
-            <!-- ACTIVO -->
+            <hr />
+
+            <div class="section-title">
+                Datos para Packing List
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelPacking" class="form-label"></label>
+                <input asp-for="ModelPacking" class="form-control" />
+                <span asp-validation-for="ModelPacking" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelSRI" class="form-label"></label>
+                <input asp-for="ModelSRI" class="form-control" />
+                <span asp-validation-for="ModelSRI" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelHomologacion" class="form-label"></label>
+                <input asp-for="ModelHomologacion" class="form-control" />
+                <span asp-validation-for="ModelHomologacion" class="text-danger"></span>
+            </div>
+
             <div class="form-check mt-3">
-
                 <input asp-for="Activo" class="form-check-input" />
-
                 <label class="form-check-label">Activo</label>
-
             </div>
 
-            <!-- BOTONES -->
             <div class="btn-actions">
-
                 <button type="submit" class="btn btn-lozano">
                     💾 Guardar Modelo
                 </button>
@@ -149,13 +134,9 @@
                 <a href="/Modelos" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
 
 @section Scripts {

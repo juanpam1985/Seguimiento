@@ -89,7 +89,7 @@ namespace Seguimiento.Controllers
         // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
+        public async Task<IActionResult> Create([Bind("Id,MarcaId,Nombre,ModelPacking,ModelSRI,ModelHomologacion,Activo,TipoModeloId")] Modelo modelo)
         {
             if (!Puede("CREAR"))
                 return RedirectToAction(nameof(Index));
@@ -97,7 +97,7 @@ namespace Seguimiento.Controllers
             if (modelo.MarcaId == 0)
                 ModelState.AddModelError("MarcaId", "Debe seleccionar una marca");
 
-            if (modelo.TipoModeloId == null)
+            if (modelo.TipoModeloId == 0)
                 ModelState.AddModelError("TipoModeloId", "Debe seleccionar un tipo");
 
             if (string.IsNullOrWhiteSpace(modelo.Nombre))
@@ -155,7 +155,7 @@ namespace Seguimiento.Controllers
         // ===============================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,MarcaId,Nombre,Activo,TipoModeloId")] Modelo modelo)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,MarcaId,Nombre,ModelPacking,ModelSRI,ModelHomologacion,Activo,TipoModeloId")] Modelo modelo)
         {
             if (!Puede("EDITAR"))
                 return RedirectToAction(nameof(Index));
@@ -166,7 +166,7 @@ namespace Seguimiento.Controllers
             if (modelo.MarcaId == 0)
                 ModelState.AddModelError("MarcaId", "Debe seleccionar una marca");
 
-            if (modelo.TipoModeloId == null)
+            if (modelo.TipoModeloId == 0)
                 ModelState.AddModelError("TipoModeloId", "Debe seleccionar un tipo");
 
             if (string.IsNullOrWhiteSpace(modelo.Nombre))
@@ -212,7 +212,10 @@ namespace Seguimiento.Controllers
                 .Select(m => new
                 {
                     id = m.Id,
-                    nombre = m.Nombre
+                    nombre = m.Nombre,
+                    modelPacking = m.ModelPacking,
+                    modelSRI = m.ModelSRI,
+                    modelHomologacion = m.ModelHomologacion
                 })
                 .OrderBy(m => m.nombre)
                 .ToList();

@@ -5,12 +5,13 @@
 }
 
 <style>
-
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 25px;
+        gap: 15px;
+        flex-wrap: wrap;
     }
 
     .btn-lozano {
@@ -35,7 +36,6 @@
     .table thead {
         background: #2c3e50;
         color: white;
-        cursor: pointer;
     }
 
     .table tbody tr:hover {
@@ -69,28 +69,23 @@
     .acciones {
         white-space: nowrap;
     }
-
 </style>
 
 <div class="container-fluid mt-4">
 
     <div class="page-header">
-
         <h3>🚗 Modelos de Vehículos</h3>
 
-        <div class="d-flex gap-3">
-
+        <div class="d-flex gap-3 flex-wrap">
             <input id="buscarModelo"
                    type="text"
                    class="form-control search-box"
-                   placeholder="Buscar modelo...">
+                   placeholder="Buscar modelo..." />
 
             <a asp-action="Create" class="btn btn-lozano">
                 ➕ Nuevo Modelo
             </a>
-
         </div>
-
     </div>
 
     <div class="counter">
@@ -98,43 +93,31 @@
     </div>
 
     <div class="card-table">
-
         <div class="table-responsive">
-
             <table id="tablaModelos" class="table table-hover">
-
                 <thead>
-
                     <tr>
-
-                        <th onclick="ordenarTabla(0)">Modelo</th>
-                        <th onclick="ordenarTabla(1)">Marca</th>
-                        <th onclick="ordenarTabla(2)">Estado</th>
-                        <th style="width:180px">Acciones</th>
-
+                        <th>Nombre</th>
+                        <th>Marca</th>
+                        <th>Tipo</th>
+                        <th>Model</th>
+                        <th>Model (SRI)</th>
+                        <th>Model (HOMOLOGACIÓN)</th>
+                        <th>Estado</th>
+                        <th style="width:180px;">Acciones</th>
                     </tr>
-
                 </thead>
-
                 <tbody>
-
                     @foreach (var item in Model)
                     {
-
                         <tr>
-
+                            <td><strong>@item.Nombre</strong></td>
+                            <td>@(item.Marca != null ? item.Marca.Nombre : "")</td>
+                            <td>@(item.TipoModelo != null ? item.TipoModelo.Nombre : "")</td>
+                            <td>@item.ModelPacking</td>
+                            <td>@item.ModelSRI</td>
+                            <td>@item.ModelHomologacion</td>
                             <td>
-                                <strong>@item.Nombre</strong>
-                            </td>
-
-                            <td>
-                                <span class="badge bg-secondary">
-                                    @item.Marca?.Nombre
-                                </span>
-                            </td>
-
-                            <td>
-
                                 @if (item.Activo)
                                 {
                                     <span class="badge-activo">Activo</span>
@@ -143,126 +126,42 @@
                                 {
                                     <span class="badge-inactivo">Inactivo</span>
                                 }
-
                             </td>
-
                             <td class="acciones">
-
                                 <div class="btn-group btn-group-sm">
-
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">
-                                        ✏ Editar
-                                    </a>
-
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">
-                                        🔍 Ver
-                                    </a>
-
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">
-                                        🗑 Eliminar
-                                    </a>
-
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning">Editar</a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-info text-white">Ver</a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger">Eliminar</a>
                                 </div>
-
                             </td>
-
                         </tr>
-
                     }
-
                 </tbody>
-
             </table>
-
         </div>
-
     </div>
-
 </div>
 
 <script>
-
     const input = document.getElementById("buscarModelo");
     const table = document.getElementById("tablaModelos");
     const rows = table.querySelectorAll("tbody tr");
 
-    input.addEventListener("keyup", function(){
+    input.addEventListener("keyup", function () {
+        let filtro = this.value.toLowerCase();
+        let total = 0;
 
-    let filtro = this.value.toLowerCase();
-    let total = 0;
+        rows.forEach(row => {
+            let texto = row.innerText.toLowerCase();
 
-    rows.forEach(row => {
+            if (texto.includes(filtro)) {
+                row.style.display = "";
+                total++;
+            } else {
+                row.style.display = "none";
+            }
+        });
 
-    let texto = row.innerText.toLowerCase();
-
-    if(texto.includes(filtro)){
-    row.style.display="";
-    total++;
-    }
-    else{
-    row.style.display="none";
-    }
-
+        document.getElementById("totalModelos").innerText = total;
     });
-
-    document.getElementById("totalModelos").innerText = total;
-
-    });
-
-
-    function ordenarTabla(col){
-
-    let switching = true;
-    let dir = "asc";
-    let rows, i, x, y, shouldSwitch;
-    let table = document.getElementById("tablaModelos");
-
-    while (switching){
-
-    switching = false;
-    rows = table.rows;
-
-    for(i = 1; i < (rows.length - 1); i++){
-
-    shouldSwitch = false;
-
-    x = rows[i].getElementsByTagName("TD")[col];
-    y = rows[i + 1].getElementsByTagName("TD")[col];
-
-    if(dir == "asc"){
-
-    if(x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()){
-    shouldSwitch = true;
-    break;
-    }
-
-    }else{
-
-    if(x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()){
-    shouldSwitch = true;
-    break;
-    }
-
-    }
-
-    }
-
-    if(shouldSwitch){
-
-    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-    switching = true;
-
-    }else{
-
-    if(dir == "asc"){
-    dir = "desc";
-    switching = true;
-    }
-
-    }
-
-    }
-
-    }
-
 </script>

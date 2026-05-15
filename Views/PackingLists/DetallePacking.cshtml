@@ -1,0 +1,441 @@
+﻿@model Seguimiento.Models.ViewModels.PackingListDetallePageViewModel
+
+@{
+    ViewData["Title"] = "Packing List";
+}
+
+<style>
+    .tabla-packing-scroll {
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+    }
+
+        .tabla-packing-scroll table {
+            min-width: 2200px;
+            white-space: nowrap;
+        }
+
+        .tabla-packing-scroll th,
+        .tabla-packing-scroll td {
+            vertical-align: middle;
+        }
+</style>
+
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Packing List</h2>
+            <p class="text-muted mb-0">
+                Subtrámite: <strong>@Model.SubtramiteTitulo</strong>
+            </p>
+        </div>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="Embarques" asp-action="Edit" asp-route-id="@Model.SubtramiteId" class="btn btn-outline-secondary">
+                ← Volver al Subtrámite
+            </a>
+
+            <a asp-action="ExportarExcel" asp-route-subtramiteId="@Model.SubtramiteId" class="btn btn-success">
+                📗 Descargar Excel
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["OK"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["OK"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <strong>Revisa los campos marcados.</strong>
+        </div>
+    }
+
+    @if (ViewBag.ErroresDebug != null)
+    {
+        <div class="alert alert-warning">
+            <strong>Errores detectados:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var err in (List<string>)ViewBag.ErroresDebug)
+                {
+                    <li>@err</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold">
+            Importar desde Excel
+        </div>
+        <div class="card-body">
+            <form asp-action="ImportarExcel" method="post" enctype="multipart/form-data" class="row g-3 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="subtramiteId" value="@Model.SubtramiteId" />
+
+                <div class="col-md-5">
+                    <label class="form-label fw-semibold">Archivo Excel</label>
+                    <input type="file" name="archivoExcel" accept=".xlsx" class="form-control" />
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-success w-100">
+                        📥 Importar Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold">
+            Datos del Packing
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Request No.</label>
+                    <input class="form-control" value="@Model.Packing?.RequestNo" readonly />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Fecha Embarque</label>
+                    <input class="form-control" value="@(Model.Packing?.FechaEmbarque?.ToString("dd/MM/yyyy"))" readonly />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Fecha Arribo</label>
+                    <input class="form-control" value="@(Model.Packing?.FechaArribo?.ToString("dd/MM/yyyy"))" readonly />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-white fw-bold">
+            Agregar Línea al Packing
+        </div>
+        <div class="card-body">
+            <form asp-action="CrearDetalle" method="post">
+                @Html.AntiForgeryToken()
+
+                <input asp-for="NuevoDetalle.PackingListId" type="hidden" />
+
+                <div asp-validation-summary="All" class="alert alert-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.OriginPort" class="form-label fw-semibold">Origin Port</label>
+                        <input asp-for="NuevoDetalle.OriginPort" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.OriginPort" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.DestinationPort" class="form-label fw-semibold">Destination Port</label>
+                        <input asp-for="NuevoDetalle.DestinationPort" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.DestinationPort" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.Ship" class="form-label fw-semibold">Ship</label>
+                        <input asp-for="NuevoDetalle.Ship" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Ship" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.InvoiceNumber" class="form-label fw-semibold">Invoice Number</label>
+                        <input asp-for="NuevoDetalle.InvoiceNumber" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.InvoiceNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.BL" class="form-label fw-semibold">B/L</label>
+                        <input asp-for="NuevoDetalle.BL" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.BL" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.VinNo" class="form-label fw-semibold text-danger">VIN No.</label>
+                        <input asp-for="NuevoDetalle.VinNo" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.VinNo" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModeloId" class="form-label fw-semibold">Modelo</label>
+                        <select asp-for="NuevoDetalle.ModeloId" id="ModeloId" class="form-select">
+                            <option value="">Seleccione modelo</option>
+                            @foreach (var item in Model.Modelos)
+                            {
+                                <option value="@item.Id"
+                                        data-modelpacking="@item.ModelPacking"
+                                        data-modelsri="@item.ModelSRI"
+                                        data-modelhomologacion="@item.ModelHomologacion">
+                                    @item.Nombre
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="NuevoDetalle.ModeloId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelPacking" class="form-label fw-semibold">Model</label>
+                        <input asp-for="NuevoDetalle.ModelPacking" id="ModelPacking" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelPacking" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelSRI" class="form-label fw-semibold">Model (SRI)</label>
+                        <input asp-for="NuevoDetalle.ModelSRI" id="ModelSRI" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelSRI" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelHomologacion" class="form-label fw-semibold">Model (HOMOLOGACIÓN)</label>
+                        <input asp-for="NuevoDetalle.ModelHomologacion" id="ModelHomologacion" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelHomologacion" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.EngineCode" class="form-label fw-semibold">Engine Code</label>
+                        <input asp-for="NuevoDetalle.EngineCode" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.EngineCode" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.EngineNumber" class="form-label fw-semibold text-danger">Engine Number</label>
+                        <input asp-for="NuevoDetalle.EngineNumber" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.EngineNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorId" class="form-label fw-semibold">Color</label>
+                        <select asp-for="NuevoDetalle.ColorId" id="ColorId" class="form-select">
+                            <option value="">Seleccione color</option>
+                            @foreach (var item in Model.Colores)
+                            {
+                                <option value="@item.Id"
+                                        data-codigo="@item.Codigo"
+                                        data-nombre="@item.Nombre"
+                                        data-nombrelocal="@item.NombreLocal">
+                                    @item.Codigo - @item.Nombre
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="NuevoDetalle.ColorId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorCodigo" class="form-label fw-semibold">Color Código</label>
+                        <input asp-for="NuevoDetalle.ColorCodigo" id="ColorCodigo" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorCodigo" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorName" class="form-label fw-semibold">Color Name</label>
+                        <input asp-for="NuevoDetalle.ColorName" id="ColorName" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorLocal" class="form-label fw-semibold">Color Local</label>
+                        <input asp-for="NuevoDetalle.ColorLocal" id="ColorLocal" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorLocal" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.ModelYear" class="form-label fw-semibold">Model Year</label>
+                        <input asp-for="NuevoDetalle.ModelYear" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.ModelYear" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.NetWeightKg" class="form-label fw-semibold">Net Weight (KGs)</label>
+                        <input asp-for="NuevoDetalle.NetWeightKg" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.NetWeightKg" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.CBM" class="form-label fw-semibold">CBM</label>
+                        <input asp-for="NuevoDetalle.CBM" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.CBM" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Precio" class="form-label fw-semibold">Precio</label>
+                        <input asp-for="NuevoDetalle.Precio" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Precio" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Flete" class="form-label fw-semibold">Flete</label>
+                        <input asp-for="NuevoDetalle.Flete" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Flete" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Seguro" class="form-label fw-semibold">Seguro</label>
+                        <input asp-for="NuevoDetalle.Seguro" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Seguro" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.Incoterm" class="form-label fw-semibold">Incoterm</label>
+                        <input asp-for="NuevoDetalle.Incoterm" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Incoterm" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        + Guardar Línea
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold">
+            Líneas Registradas
+        </div>
+        <div class="card-body">
+            @if (Model.Packing?.Detalles != null && Model.Packing.Detalles.Any(d => d.Activo))
+            {
+                <div class="tabla-packing-scroll">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Línea</th>
+                                <th>Origin Port</th>
+                                <th>Destination Port</th>
+                                <th>Ship</th>
+                                <th>Invoice Number</th>
+                                <th>B/L</th>
+                                <th>VIN</th>
+                                <th>Model</th>
+                                <th>Model (SRI)</th>
+                                <th>Model (HOMOLOGACIÓN)</th>
+                                <th>Engine Code</th>
+                                <th>Engine Number</th>
+                                <th>Color</th>
+                                <th>Color Name</th>
+                                <th>Color Local</th>
+                                <th>Model Year</th>
+                                <th>Net Weight (KGs)</th>
+                                <th>CBM</th>
+                                <th>Precio</th>
+                                <th>Flete</th>
+                                <th>Seguro</th>
+                                <th>Incoterm</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Packing.Detalles.Where(d => d.Activo).OrderBy(d => d.Linea))
+                            {
+                                <tr>
+                                    <td>@item.Linea</td>
+                                    <td>@item.OriginPort</td>
+                                    <td>@item.DestinationPort</td>
+                                    <td>@item.Ship</td>
+                                    <td>@item.InvoiceNumber</td>
+                                    <td>@item.BL</td>
+                                    <td>@item.VinNo</td>
+                                    <td>@item.ModelPacking</td>
+                                    <td>@item.ModelSRI</td>
+                                    <td>@item.ModelHomologacion</td>
+                                    <td>@item.EngineCode</td>
+                                    <td>@item.EngineNumber</td>
+                                    <td>@item.ColorCodigo</td>
+                                    <td>@item.ColorName</td>
+                                    <td>@item.ColorLocal</td>
+                                    <td>@item.ModelYear</td>
+                                    <td>@item.NetWeightKg</td>
+                                    <td>@item.CBM</td>
+                                    <td>@item.Precio</td>
+                                    <td>@item.Flete</td>
+                                    <td>@item.Seguro</td>
+                                    <td>@item.Incoterm</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a asp-action="EditarDetalle" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">
+                                                Editar
+                                            </a>
+
+                                            <form asp-action="EliminarDetalle" method="post" onsubmit="return confirm('¿Eliminar esta línea?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.Id" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    Eliminar
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center text-muted py-4">
+                    No hay líneas registradas todavía.
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const modeloSelect = document.getElementById("ModeloId");
+            const colorSelect = document.getElementById("ColorId");
+
+            function actualizarModelo() {
+                const selected = modeloSelect.options[modeloSelect.selectedIndex];
+                document.getElementById("ModelPacking").value = selected.getAttribute("data-modelpacking") || "";
+                document.getElementById("ModelSRI").value = selected.getAttribute("data-modelsri") || "";
+                document.getElementById("ModelHomologacion").value = selected.getAttribute("data-modelhomologacion") || "";
+            }
+
+            function actualizarColor() {
+                const selected = colorSelect.options[colorSelect.selectedIndex];
+                document.getElementById("ColorCodigo").value = selected.getAttribute("data-codigo") || "";
+                document.getElementById("ColorName").value = selected.getAttribute("data-nombre") || "";
+                document.getElementById("ColorLocal").value = selected.getAttribute("data-nombrelocal") || "";
+            }
+
+            if (modeloSelect) {
+                modeloSelect.addEventListener("change", actualizarModelo);
+                actualizarModelo();
+            }
+
+            if (colorSelect) {
+                colorSelect.addEventListener("change", actualizarColor);
+                actualizarColor();
+            }
+        });
+    </script>
+}

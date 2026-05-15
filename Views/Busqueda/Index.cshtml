@@ -1,0 +1,1291 @@
+﻿@model List<Seguimiento.Models.Embarque>
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Búsqueda Global";
+}
+
+<style>
+    body {
+        background: linear-gradient(135deg, #eef4ff 0%, #f8fbff 45%, #f5f7fb 100%);
+    }
+
+    .dashboard-page {
+        width: 100%;
+    }
+
+    .dashboard-top {
+        margin-bottom: 14px;
+    }
+
+    .dashboard-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .dashboard-icon {
+        font-size: 2.4rem;
+        line-height: 1;
+    }
+
+    .dashboard-title {
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: .2px;
+        margin: 0;
+        line-height: 1.05;
+        font-size: 1.9rem;
+    }
+
+    .empresa-highlight {
+        color: #2563eb;
+        text-shadow: 0 1px 0 rgba(255,255,255,.6);
+        display: block;
+        margin-top: 2px;
+    }
+
+    .top-actions .btn {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 10px 16px;
+        box-shadow: 0 8px 18px rgba(37,99,235,.12);
+        min-height: 46px;
+    }
+
+    .compact-card {
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(226,232,240,.8);
+        padding: 14px 16px;
+        border-radius: 18px;
+        box-shadow: 0 10px 26px rgba(15,23,42,.06);
+    }
+
+    .filter-title {
+        font-size: 13px;
+        font-weight: 800;
+        color: #334155;
+        margin-bottom: 6px;
+    }
+
+    .form-select,
+    .form-control {
+        border-radius: 12px;
+        border: 1px solid #dbe4f0;
+        min-height: 42px;
+    }
+
+    .btn-filter {
+        border-radius: 12px;
+        font-weight: 700;
+        min-height: 42px;
+    }
+
+    .summary-note {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+
+    .kpi-row {
+        margin-bottom: 14px;
+    }
+
+    .kpi-card {
+        border-radius: 16px;
+        padding: 14px 16px;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 10px 22px rgba(15,23,42,.08);
+        transition: all .25s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 92px;
+    }
+
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            width: 78px;
+            height: 78px;
+            border-radius: 50%;
+            background: rgba(255,255,255,.10);
+            top: -18px;
+            right: -18px;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 28px rgba(15,23,42,.12);
+        }
+
+    .kpi-title {
+        font-size: 12px;
+        opacity: .95;
+    }
+
+    .kpi-value {
+        font-size: 24px;
+        font-weight: 800;
+        margin-top: 2px;
+    }
+
+    .kpi-icon {
+        position: absolute;
+        right: 14px;
+        bottom: 8px;
+        font-size: 20px;
+        opacity: 0.18;
+    }
+
+    .kpi-total {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .kpi-transito {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+    }
+
+    .kpi-entregado {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+    }
+
+    .kpi-retraso {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .table-card {
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(226,232,240,.8);
+        padding: 12px;
+        border-radius: 18px;
+        box-shadow: 0 10px 26px rgba(15,23,42,.06);
+    }
+
+    .table-wrap {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        width: 100%;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .table {
+        margin-bottom: 0;
+        min-width: 1180px;
+    }
+
+        .table thead th {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .4px;
+            border-color: rgba(255,255,255,.08);
+            padding: 12px 10px;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        .table tbody td {
+            vertical-align: middle;
+            padding: 11px 10px;
+            border-color: #edf2f7;
+            white-space: nowrap;
+        }
+
+    .tramite-principal-row {
+        background: #ffffff;
+        transition: all .22s ease;
+        cursor: pointer;
+    }
+
+        .tramite-principal-row:hover {
+            background: #eff6ff !important;
+        }
+
+        .tramite-principal-row.row-open {
+            background: linear-gradient(135deg, #dbeafe, #eef2ff) !important;
+        }
+
+    .badge-custom {
+        display: inline-block;
+        padding: 6px 11px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: white;
+        font-weight: 700;
+        box-shadow: inset 0 -1px 0 rgba(0,0,0,.08);
+    }
+
+    .bg-ok {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+    }
+
+    .bg-transit {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .bg-delay {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .dias-badge {
+        display: inline-block;
+        min-width: 52px;
+        text-align: center;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        background: #e2e8f0;
+        color: #0f172a;
+    }
+
+    .btn-xs {
+        padding: 7px 12px;
+        font-size: 12px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #334155;
+        transition: all .18s ease;
+        box-shadow: none;
+    }
+
+        .btn-xs:hover {
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
+            transform: translateY(-1px);
+        }
+
+    .btn-edit,
+    .btn-detail,
+    .btn-delete {
+        background: #ffffff;
+        color: #334155;
+        border: 1px solid #d1d5db;
+    }
+
+        .btn-edit:hover,
+        .btn-detail:hover,
+        .btn-delete:hover {
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+    .btn-toggle-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: #334155;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: none;
+        transition: all .22s ease;
+    }
+
+        .btn-toggle-inline:hover {
+            transform: translateY(-1px);
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+
+        .btn-toggle-inline.open {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+            color: #0f172a;
+            box-shadow: none;
+        }
+
+    .toggle-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 12px;
+        transition: transform .28s ease;
+        font-size: 10px;
+    }
+
+    .btn-toggle-inline.open .toggle-icon {
+        transform: rotate(90deg);
+    }
+
+    .shipment-main {
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .shipment-sub {
+        color: #0f172a;
+        font-weight: 800;
+    }
+
+    .shipment-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .sub-info-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .sub-count-below {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .text-muted-soft {
+        color: #94a3b8;
+    }
+
+    .summary-footer {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #334155;
+        font-size: 13px;
+        font-weight: 700;
+    }
+
+    .subtramites-panel-row {
+        display: none;
+        background: transparent !important;
+    }
+
+    .subtramites-panel-cell {
+        padding: 0 !important;
+        background: transparent !important;
+        border-top: none !important;
+    }
+
+    .subtramites-panel {
+        margin: 8px 12px 12px 12px;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #94a3b8;
+        border-radius: 18px;
+        background: #ffffff;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        opacity: 0;
+        transform: translateY(-16px) scale(.985);
+        filter: blur(8px);
+    }
+
+        .subtramites-panel.panel-show {
+            animation: panelMagicIn .6s cubic-bezier(.22,1,.36,1) forwards;
+        }
+
+    @@keyframes panelMagicIn {
+        0% {
+            opacity: 0;
+            transform: translateY(-22px) scale(.975);
+            filter: blur(12px);
+        }
+
+        45% {
+            opacity: 1;
+            transform: translateY(6px) scale(1.01);
+            filter: blur(2px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+    }
+
+    .subtramites-inner {
+        padding: 12px 14px 16px 14px;
+    }
+
+    .subtramites-inner-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .subtramites-inner-table {
+        width: 100%;
+        min-width: 1100px;
+        margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+        .subtramites-inner-table thead th {
+            background: #f8fafc;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 10px 8px;
+            border: none;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .subtramites-inner-table tbody tr.sub-item-row {
+            opacity: 0;
+            transform: translateY(18px) scale(.98);
+            filter: blur(6px);
+        }
+
+    .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row {
+        animation: subRowBuild .45s cubic-bezier(.22,1,.36,1) forwards;
+    }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(1) {
+            animation-delay: .10s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(2) {
+            animation-delay: .18s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(3) {
+            animation-delay: .26s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(4) {
+            animation-delay: .34s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(5) {
+            animation-delay: .42s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(6) {
+            animation-delay: .50s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(7) {
+            animation-delay: .58s;
+        }
+
+        .subtramites-panel.panel-show .subtramites-inner-table tbody tr.sub-item-row:nth-child(8) {
+            animation-delay: .66s;
+        }
+
+    @@keyframes subRowBuild {
+        0% {
+            opacity: 0;
+            transform: translateY(22px) scale(.985);
+            filter: blur(8px);
+        }
+
+        60% {
+            opacity: 1;
+            transform: translateY(-2px) scale(1.005);
+            filter: blur(1px);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+    }
+
+    .subtramites-inner-table tbody td {
+        background: rgba(255,255,255,.95);
+        padding: 10px 8px;
+        border-bottom: 1px solid #e5e7eb;
+        font-size: 13px;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .subtramites-inner-table tbody tr:hover td {
+        background: #fafcff;
+    }
+
+    .subtramites-inner-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .panel-empty {
+        padding: 18px;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .acciones-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .acciones-btn {
+        min-width: 110px;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .acciones-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        min-width: 170px;
+        background: #ffffff;
+        border: 1px solid #dbe4f0;
+        border-radius: 14px;
+        box-shadow: 0 14px 30px rgba(15,23,42,.14);
+        padding: 8px;
+        z-index: 1200;
+    }
+
+    .acciones-dropdown.open .acciones-menu {
+        display: block;
+    }
+
+    .acciones-item {
+        display: flex;
+        width: 100%;
+        text-decoration: none;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+        border: none;
+        background: #ffffff;
+        transition: all .18s ease;
+    }
+
+        .acciones-item:hover {
+            background: #f8fafc;
+            color: #0f172a;
+        }
+
+        .acciones-item.delete-item {
+            color: #b91c1c;
+        }
+
+            .acciones-item.delete-item:hover {
+                background: #fef2f2;
+                color: #991b1b;
+            }
+
+    .sub-actions {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    @@media (max-width: 991.98px) {
+        .dashboard-title {
+            font-size: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 767.98px) {
+        .dashboard-title-wrap {
+            align-items: flex-start;
+        }
+
+        .dashboard-title {
+            font-size: 1.3rem;
+        }
+
+        .top-actions {
+            width: 100%;
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px !important;
+        }
+
+            .top-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+        .compact-card,
+        .table-card {
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .subtramites-panel {
+            margin-left: 8px;
+            margin-right: 8px;
+        }
+
+        .acciones-btn {
+            min-width: 100px;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .dashboard-icon {
+            font-size: 2rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.15rem;
+        }
+
+        .filter-title {
+            font-size: 13px;
+        }
+
+        .summary-note,
+        .summary-footer {
+            font-size: 12px;
+        }
+
+        .badge-custom,
+        .dias-badge {
+            font-size: 11px;
+        }
+
+        .btn-xs {
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+
+        .acciones-menu {
+            right: auto;
+            left: 0;
+        }
+    }
+</style>
+
+<div class="dashboard-page">
+    <div class="dashboard-top d-flex flex-wrap justify-content-between align-items-center">
+        <div class="dashboard-title-wrap">
+            <div class="dashboard-icon">📊</div>
+            <h2 class="dashboard-title">
+                Búsqueda Global -
+                <span class="empresa-highlight">@ViewBag.NombreEmpresa</span>
+            </h2>
+        </div>
+
+        <div class="top-actions d-flex gap-2">
+            <a asp-controller="Embarques" asp-action="Create" class="btn btn-success">➕ Nuevo Embarque</a>
+            <a asp-controller="Embarques" asp-action="Dashboard" class="btn btn-outline-primary">Volver al Dashboard</a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger shadow-sm border-0 rounded-4 mb-3">
+            @TempData["Error"]
+        </div>
+    }
+
+    @if (TempData["OK"] != null)
+    {
+        <div class="alert alert-success shadow-sm border-0 rounded-4 mb-3">
+            @TempData["OK"]
+        </div>
+    }
+
+    @functions {
+        string GetCampoTexto(List<Seguimiento.Models.Respuesta> respuestas, string nombre)
+        {
+            return respuestas.FirstOrDefault(r =>
+            r.Pregunta != null &&
+            r.Pregunta.Nombre != null &&
+            r.Pregunta.Nombre.ToUpper().Contains(nombre.ToUpper())
+            )?.Valor ?? "";
+        }
+
+        DateTime? GetCampoFecha(List<Seguimiento.Models.Respuesta> respuestas, string nombre)
+        {
+            var texto = GetCampoTexto(respuestas, nombre);
+            return DateTime.TryParse(texto, out DateTime fecha) ? fecha : (DateTime?)null;
+        }
+    }
+
+    @{
+        int total = ViewBag.Total ?? 0;
+        int enTransito = ViewBag.EnTransito ?? 0;
+        int entregados = ViewBag.Entregados ?? 0;
+        int retrasados = ViewBag.Retrasados ?? 0;
+        int? marcaSeleccionada = ViewBag.MarcaId;
+        string filtroActual = ViewBag.Filtro as string ?? "todos";
+        string qActual = ViewBag.Q as string ?? "";
+        int totalMostrados = Model.Count(x => !x.EsSubtramite);
+
+        var camposObligatorios = new List<string>
+    {
+    "ETA",
+    "TRÁNSITO",
+    "HOMOLOGATION",
+    "CERTIFICADO 017 INEN",
+    "AFIP",
+    "INVOICES",
+    "BLs",
+    "BL",
+    "COs",
+    "APLICACIONES DE SEGURO",
+    "LICENCIA INEN",
+    "PACKING",
+    "SUBCATEGOR",
+    "NOTIFICACIÓN SRI",
+    "DESTINO ADUANERO",
+    "TIPO DE PAGO",
+    "DIAS LIBRES",
+    "MRN",
+    "PRE-LIQUIDACIÓN",
+    "EMISION BL",
+    "CAS",
+    "PAGO FLETE",
+    "ORIGINAL",
+    "ESTADO DEL BUQUE"
+    };
+    }
+
+    <div class="compact-card mb-3">
+        <form method="get" asp-action="Index" asp-controller="Busqueda" class="row g-2 align-items-end">
+            <input type="hidden" name="filtro" value="@filtroActual" />
+
+            <div class="col-12 col-md-5">
+                <div class="filter-title">Buscar en embarque, subtrámite y packing list</div>
+                <input type="text"
+                       name="q"
+                       value="@qActual"
+                       class="form-control"
+                       placeholder="Escribe cualquier palabra..." />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <div class="filter-title">Filtrar por marca</div>
+                <select name="marcaId" class="form-select">
+                    <option value="">Todas las marcas</option>
+                    @foreach (var m in (ViewBag.MarcasFiltro as List<SelectListItem> ?? new List<SelectListItem>()))
+                    {
+                        if (marcaSeleccionada.HasValue && marcaSeleccionada.Value.ToString() == m.Value)
+                        {
+                            <option value="@m.Value" selected>@m.Text</option>
+                        }
+                        else
+                        {
+                            <option value="@m.Value">@m.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="col-12 col-sm-4 col-md-1">
+                <button type="submit" class="btn btn-primary w-100 btn-filter">Buscar</button>
+            </div>
+
+            <div class="col-12 col-sm-4 col-md-1">
+                <a asp-action="Index" asp-controller="Busqueda" class="btn btn-secondary w-100 btn-filter">Limpiar</a>
+            </div>
+
+            <div class="col-12 col-sm-4 col-md-2">
+                <a asp-controller="ReporteEmbarque"
+                   asp-action="ExportarExcel"
+                   asp-route-q="@qActual"
+                   asp-route-marcaId="@ViewBag.MarcaId"
+                   asp-route-filtro="@filtroActual"
+                   class="btn btn-outline-success w-100 btn-filter">
+                    📗 Exportar Excel
+                </a>
+            </div>
+        </form>
+
+        <div class="summary-note">
+            Escribe cualquier palabra y el sistema buscará en embarque, subtrámite y packing list. Haz clic en el indicador de subtrámites o en toda la fila principal para desplegar.
+        </div>
+    </div>
+
+    <div class="row kpi-row g-3">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <a asp-controller="Busqueda"
+               asp-action="Index"
+               asp-route-q="@qActual"
+               asp-route-filtro="todos"
+               asp-route-marcaId="@ViewBag.MarcaId"
+               style="text-decoration:none;">
+                <div class="kpi-card kpi-total">
+                    <div class="kpi-title">Total Embarques</div>
+                    <div class="kpi-value">@total</div>
+                    <div class="kpi-icon">📦</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <a asp-controller="Busqueda"
+               asp-action="Index"
+               asp-route-q="@qActual"
+               asp-route-filtro="transito"
+               asp-route-marcaId="@ViewBag.MarcaId"
+               style="text-decoration:none;">
+                <div class="kpi-card kpi-transito">
+                    <div class="kpi-title">En tránsito</div>
+                    <div class="kpi-value">@enTransito</div>
+                    <div class="kpi-icon">🚢</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <a asp-controller="Busqueda"
+               asp-action="Index"
+               asp-route-q="@qActual"
+               asp-route-filtro="entregado"
+               asp-route-marcaId="@ViewBag.MarcaId"
+               style="text-decoration:none;">
+                <div class="kpi-card kpi-entregado">
+                    <div class="kpi-title">Entregados</div>
+                    <div class="kpi-value">@entregados</div>
+                    <div class="kpi-icon">✅</div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-xl-3">
+            <a asp-controller="Busqueda"
+               asp-action="Index"
+               asp-route-q="@qActual"
+               asp-route-filtro="retrasado"
+               asp-route-marcaId="@ViewBag.MarcaId"
+               style="text-decoration:none;">
+                <div class="kpi-card kpi-retraso">
+                    <div class="kpi-title">Retrasados</div>
+                    <div class="kpi-value">@retrasados</div>
+                    <div class="kpi-icon">⚠️</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-responsive table-wrap">
+            <table class="table table-bordered table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Shipment</th>
+                        <th>Marca</th>
+                        <th>Destino</th>
+                        <th>Naviera</th>
+                        <th>Cantidad</th>
+                        <th>ETD</th>
+                        <th>ETA</th>
+                        <th>ATA</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var item in Model.Where(x => !x.EsSubtramite))
+                    {
+                        var respuestas = item.Respuestas?.ToList() ?? new List<Seguimiento.Models.Respuesta>();
+
+                        var status = GetCampoTexto(respuestas, "STATUS");
+                        var shipment = GetCampoTexto(respuestas, "SHIPMENT");
+                        var marcaCampoId = GetCampoTexto(respuestas, "BRAND");
+
+                        var nombreMarca = (ViewBag.Marcas as List<Seguimiento.Models.Marca>)
+                        ?.FirstOrDefault(m => m.Id.ToString() == marcaCampoId)?.Nombre ?? "";
+
+                        var destino = GetCampoTexto(respuestas, "DESTINATION");
+                        var naviera = GetCampoTexto(respuestas, "SHIPPING");
+                        var qty = item.EmbarqueModelos?.Sum(x => x.Cantidad) ?? 0;
+
+                        var salida = GetCampoFecha(respuestas, "DEPARTURE");
+                        var eta = GetCampoFecha(respuestas, "ETA");
+                        var ataTexto = GetCampoTexto(respuestas, "TIEMPO SALIDA AUTORIZADA");
+                        var departure = GetCampoFecha(respuestas, "DEPARTURE");
+
+                        var subtramites = Model
+                        .Where(x => x.EsSubtramite && x.EmbarquePadreId == item.Id)
+                        .OrderBy(x => x.OrdenSubtramite ?? int.MaxValue)
+                        .ToList();
+
+                        bool esRetrasado = false;
+
+                        if (!string.Equals(status?.Trim(), "Closed", StringComparison.OrdinalIgnoreCase) &&
+                        !string.Equals(status?.Trim(), "Entregado", StringComparison.OrdinalIgnoreCase) &&
+                        departure.HasValue &&
+                        departure.Value.Date.AddDays(1) < DateTime.Now.Date)
+                        {
+                            foreach (var campo in camposObligatorios)
+                            {
+                                var valorCampo = GetCampoTexto(respuestas, campo);
+                                if (string.IsNullOrWhiteSpace(valorCampo))
+                                {
+                                    esRetrasado = true;
+                                    break;
+                                }
+                            }
+                        }
+
+                        string estadoHtml = "";
+
+                        if (string.Equals(status?.Trim(), "Closed", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(status?.Trim(), "Entregado", StringComparison.OrdinalIgnoreCase))
+                        {
+                            estadoHtml = "<span class='badge-custom bg-ok'>Entregado</span>";
+                        }
+                        else if (esRetrasado)
+                        {
+                            estadoHtml = "<span class='badge-custom bg-delay'>Retrasado</span>";
+                        }
+                        else
+                        {
+                            estadoHtml = "<span class='badge-custom bg-transit'>En tránsito</span>";
+                        }
+
+                        <tr class="tramite-principal-row" data-padre-row="@item.Id">
+                            <td>
+                                @{
+                                    var estado = status?.ToUpper().Trim();
+                                }
+
+                                @if (estado == "OPEN")
+                                {
+                                    <span class="badge-custom bg-transit">@status</span>
+                                }
+                                else if (estado == "CLOSED")
+                                {
+                                    <span class="badge-custom bg-ok">Closed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge-custom bg-delay">@status</span>
+                                }
+                            </td>
+
+                            <td>
+                                <div class="shipment-stack">
+                                    <span class="shipment-main">@shipment</span>
+
+                                    @if (subtramites.Any())
+                                    {
+                                        <div class="sub-info-row">
+                                            <span class="sub-count-below">Subtrámites: @subtramites.Count</span>
+
+                                            <button type="button"
+                                                    class="btn-toggle-inline toggle-subtramites"
+                                                    data-padre="@item.Id"
+                                                    title="Ver subtrámites"
+                                                    aria-label="Ver subtrámites">
+                                                <span class="toggle-icon">▸</span>
+                                                <span>Ver</span>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+
+                            <td>@nombreMarca</td>
+                            <td>@destino</td>
+                            <td>@naviera</td>
+                            <td><strong>@qty</strong></td>
+                            <td>@(salida?.ToString("dd/MM/yyyy"))</td>
+                            <td>@(eta?.ToString("dd/MM/yyyy"))</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(ataTexto))
+                                {
+                                    <span class="dias-badge">@ataTexto</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted-soft">-</span>
+                                }
+                            </td>
+                            <td>@Html.Raw(estadoHtml)</td>
+
+                            <td>
+                                <div class="acciones-dropdown">
+                                    <button type="button" class="btn btn-xs acciones-btn">
+                                        Opciones ▾
+                                    </button>
+
+                                    <div class="acciones-menu">
+                                        <a asp-controller="Embarques" asp-action="Create" asp-route-embarquePadreId="@item.Id" class="acciones-item">
+                                            + Subtrámite
+                                        </a>
+                                        <a asp-controller="Embarques" asp-action="Edit" asp-route-id="@item.Id" class="acciones-item">
+                                            Editar
+                                        </a>
+                                        <a asp-controller="Embarques" asp-action="Details" asp-route-id="@item.Id" class="acciones-item">
+                                            Detalle
+                                        </a>
+                                        <a asp-controller="Embarques" asp-action="Delete" asp-route-id="@item.Id" class="acciones-item delete-item">
+                                            Eliminar
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr class="subtramites-panel-row" data-subtramites-panel="@item.Id">
+                            <td colspan="11" class="subtramites-panel-cell">
+                                <div class="subtramites-panel">
+                                    <div class="subtramites-inner">
+                                        @if (subtramites.Any())
+                                        {
+                                            <div class="subtramites-inner-scroll">
+                                                <table class="subtramites-inner-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Status</th>
+                                                            <th>Shipment</th>
+                                                            <th>Marca</th>
+                                                            <th>Destino</th>
+                                                            <th>Naviera</th>
+                                                            <th>Cantidad</th>
+                                                            <th>ETD</th>
+                                                            <th>ETA</th>
+                                                            <th>ATA</th>
+                                                            <th>Estado</th>
+                                                            <th>Acciones</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var sub in subtramites)
+                                                        {
+                                                            var respuestasSub = sub.Respuestas?.ToList() ?? new List<Seguimiento.Models.Respuesta>();
+
+                                                            var subStatus = GetCampoTexto(respuestasSub, "STATUS");
+                                                            var subShipment = GetCampoTexto(respuestasSub, "SHIPMENT");
+                                                            var subMarcaCampoId = GetCampoTexto(respuestasSub, "BRAND");
+
+                                                            var subNombreMarca = (ViewBag.Marcas as List<Seguimiento.Models.Marca>)
+                                                            ?.FirstOrDefault(m => m.Id.ToString() == subMarcaCampoId)?.Nombre ?? "";
+
+                                                            var subDestino = GetCampoTexto(respuestasSub, "DESTINATION");
+                                                            var subNaviera = GetCampoTexto(respuestasSub, "SHIPPING");
+                                                            var subQty = sub.EmbarqueModelos?.Sum(x => x.Cantidad) ?? 0;
+                                                            var subSalida = GetCampoFecha(respuestasSub, "DEPARTURE");
+                                                            var subEta = GetCampoFecha(respuestasSub, "ETA");
+                                                            var subAtaTexto = GetCampoTexto(respuestasSub, "TIEMPO SALIDA AUTORIZADA");
+                                                            var subDeparture = GetCampoFecha(respuestasSub, "DEPARTURE");
+
+                                                            bool subEsRetrasado = false;
+
+                                                            if (!string.Equals(subStatus?.Trim(), "Closed", StringComparison.OrdinalIgnoreCase) &&
+                                                            !string.Equals(subStatus?.Trim(), "Entregado", StringComparison.OrdinalIgnoreCase) &&
+                                                            subDeparture.HasValue &&
+                                                            subDeparture.Value.Date.AddDays(1) < DateTime.Now.Date)
+                                                            {
+                                                                foreach (var campo in camposObligatorios)
+                                                                {
+                                                                    var valorCampoSub = GetCampoTexto(respuestasSub, campo);
+                                                                    if (string.IsNullOrWhiteSpace(valorCampoSub))
+                                                                    {
+                                                                        subEsRetrasado = true;
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            string subEstadoHtml = "";
+
+                                                            if (string.Equals(subStatus?.Trim(), "Closed", StringComparison.OrdinalIgnoreCase) ||
+                                                            string.Equals(subStatus?.Trim(), "Entregado", StringComparison.OrdinalIgnoreCase))
+                                                            {
+                                                                subEstadoHtml = "<span class='badge-custom bg-ok'>Entregado</span>";
+                                                            }
+                                                            else if (subEsRetrasado)
+                                                            {
+                                                                subEstadoHtml = "<span class='badge-custom bg-delay'>Retrasado</span>";
+                                                            }
+                                                            else
+                                                            {
+                                                                subEstadoHtml = "<span class='badge-custom bg-transit'>En tránsito</span>";
+                                                            }
+
+                                                            <tr class="sub-item-row">
+                                                                <td>
+                                                                    @if ((subStatus ?? "").Trim().ToUpper() == "OPEN")
+                                                                    {
+                                                                        <span class="badge-custom bg-transit">@subStatus</span>
+                                                                    }
+                                                                    else if ((subStatus ?? "").Trim().ToUpper() == "CLOSED")
+                                                                    {
+                                                                        <span class="badge-custom bg-ok">Closed</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge-custom bg-delay">@subStatus</span>
+                                                                    }
+                                                                </td>
+                                                                <td><span class="shipment-sub">@subShipment</span></td>
+                                                                <td>@subNombreMarca</td>
+                                                                <td>@subDestino</td>
+                                                                <td>@subNaviera</td>
+                                                                <td><strong>@subQty</strong></td>
+                                                                <td>@(subSalida?.ToString("dd/MM/yyyy"))</td>
+                                                                <td>@(subEta?.ToString("dd/MM/yyyy"))</td>
+                                                                <td>
+                                                                    @if (!string.IsNullOrWhiteSpace(subAtaTexto))
+                                                                    {
+                                                                        <span class="dias-badge">@subAtaTexto</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="text-muted-soft">-</span>
+                                                                    }
+                                                                </td>
+                                                                <td>@Html.Raw(subEstadoHtml)</td>
+                                                                <td>
+                                                                    <div class="sub-actions">
+                                                                        <a asp-controller="Embarques" asp-action="Edit" asp-route-id="@sub.Id" class="btn btn-xs btn-edit">Editar</a>
+                                                                        <a asp-controller="Embarques" asp-action="Details" asp-route-id="@sub.Id" class="btn btn-xs btn-detail">Detalle</a>
+                                                                        <a asp-controller="Embarques" asp-action="Delete" asp-route-id="@sub.Id" class="btn btn-xs btn-delete">Eliminar</a>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="panel-empty">Este embarque todavía no tiene subtrámites.</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary-footer">
+            Total de embarques mostrados: <strong>@totalMostrados</strong>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        function animatePanel(panel) {
+            const box = panel.querySelector(".subtramites-panel");
+            if (!box) return;
+
+            box.classList.remove("panel-show");
+            void box.offsetWidth;
+            box.classList.add("panel-show");
+        }
+
+        function updateButtonState(boton, isOpen) {
+            if (!boton) return;
+
+            boton.classList.toggle("open", isOpen);
+
+            const spanText = boton.querySelector("span:last-child");
+            if (spanText) {
+                spanText.textContent = isOpen ? "Ocultar" : "Ver";
+            }
+        }
+
+        function toggleSubtramites(padreId) {
+            const panel = document.querySelector("tr[data-subtramites-panel='" + padreId + "']");
+            const boton = document.querySelector(".toggle-subtramites[data-padre='" + padreId + "']");
+            const filaPadre = document.querySelector("tr[data-padre-row='" + padreId + "']");
+
+            if (!panel) return;
+
+            const visible = window.getComputedStyle(panel).display !== "none";
+
+            if (visible) {
+                panel.style.display = "none";
+            } else {
+                panel.style.display = "table-row";
+                animatePanel(panel);
+            }
+
+            updateButtonState(boton, !visible);
+
+            if (filaPadre) {
+                filaPadre.classList.toggle("row-open", !visible);
+            }
+        }
+
+        document.querySelectorAll(".toggle-subtramites").forEach(btn => {
+            btn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                const padreId = this.getAttribute("data-padre");
+                toggleSubtramites(padreId);
+            });
+        });
+
+        document.querySelectorAll("tr[data-padre-row]").forEach(row => {
+            row.addEventListener("click", function (e) {
+                const clickedButton = e.target.closest("a, button");
+                if (clickedButton) return;
+
+                const padreId = this.getAttribute("data-padre-row");
+                toggleSubtramites(padreId);
+            });
+        });
+
+        document.querySelectorAll(".acciones-btn").forEach(btn => {
+            btn.addEventListener("click", function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const actual = this.closest(".acciones-dropdown");
+
+                document.querySelectorAll(".acciones-dropdown").forEach(drop => {
+                    if (drop !== actual) {
+                        drop.classList.remove("open");
+                    }
+                });
+
+                actual.classList.toggle("open");
+            });
+        });
+
+        document.addEventListener("click", function () {
+            document.querySelectorAll(".acciones-dropdown").forEach(drop => {
+                drop.classList.remove("open");
+            });
+        });
+    });
+</script>

@@ -1,4 +1,4 @@
-﻿@model Seguimiento.Models.Embarque
+@model Seguimiento.Models.Embarque
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
@@ -74,43 +74,108 @@
 }
 
 <style>
+    body {
+        background:
+            radial-gradient(circle at 7% 0%, rgba(249, 115, 22, .14), transparent 28%),
+            radial-gradient(circle at 92% 10%, rgba(37, 99, 235, .12), transparent 30%),
+            linear-gradient(135deg, #fff7ed 0%, #f8fafc 40%, #eef4ff 100%);
+    }
+
+    .embarque-form-page {
+        width: 100%;
+    }
+
+    .form-hero-mini {
+        margin-bottom: 12px;
+        padding: 15px 18px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #0f172a, #1e293b 62%, #7c2d12);
+        color: white;
+        box-shadow: 0 18px 45px rgba(15,23,42,.16);
+        overflow: hidden;
+        position: relative;
+    }
+
+    .form-hero-mini::after {
+        content: "";
+        position: absolute;
+        right: -60px;
+        top: -90px;
+        width: 210px;
+        height: 210px;
+        border-radius: 999px;
+        background: radial-gradient(circle, rgba(250,204,21,.28), transparent 62%);
+    }
+
+    .form-hero-mini h4 {
+        margin: 0;
+        font-weight: 950;
+        letter-spacing: -.35px;
+        position: relative;
+        z-index: 1;
+    }
+
+    .form-hero-mini p {
+        color: #cbd5e1;
+        margin: 4px 0 0 0;
+        font-weight: 750;
+        position: relative;
+        z-index: 1;
+    }
+
     .campo-alerta {
         position: relative;
     }
 
-        .campo-alerta::after {
-            content: "?";
-            position: absolute;
-            top: -6px;
-            right: -6px;
-            background: #dc3545;
-            color: white;
-            font-weight: bold;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+    .campo-alerta::after {
+        content: "!";
+        position: absolute;
+        top: -7px;
+        right: -7px;
+        background: #dc2626;
+        color: white;
+        font-weight: 950;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 18px rgba(220,38,38,.22);
+    }
 
     .bg-soft-danger {
-        background-color: #f8d7da !important;
-        color: #842029 !important;
+        background-color: #fee2e2 !important;
+        color: #7f1d1d !important;
+        border-color: #fca5a5 !important;
     }
 
     .bg-soft-success {
-        background-color: #d1e7dd !important;
-        color: #0f5132 !important;
+        background-color: #dcfce7 !important;
+        color: #14532d !important;
+        border-color: #86efac !important;
+    }
+
+    .form-table-card {
+        background: rgba(255,255,255,.94);
+        border: 1px solid rgba(226,232,240,.88);
+        border-radius: 22px;
+        padding: 10px;
+        box-shadow: 0 14px 32px rgba(15,23,42,.08);
     }
 
     .table-responsive {
         overflow-x: auto;
+        border-radius: 17px;
+        border: 1px solid #dbe4f0;
+        background: white;
+        max-height: calc(100vh - 265px);
     }
 
     table {
         white-space: nowrap;
+        margin-bottom: 0 !important;
     }
 
     td, th {
@@ -119,40 +184,119 @@
         vertical-align: middle;
     }
 
+    #tabla thead th {
+        position: sticky;
+        top: 0;
+        z-index: 4;
+        background: linear-gradient(135deg, #111827, #1f2937) !important;
+        color: white !important;
+        border-color: rgba(255,255,255,.08) !important;
+        font-size: 11px;
+        font-weight: 950;
+        text-transform: uppercase;
+        letter-spacing: .35px;
+        padding: 9px 8px;
+    }
+
+    #tabla tbody td {
+        padding: 8px;
+        border-color: #edf2f7 !important;
+        background: rgba(255,255,255,.98);
+    }
+
+    #tabla tbody tr:hover td {
+        background: #fff7ed !important;
+    }
+
     input, select {
         width: 100%;
         min-width: 110px;
         text-align: center;
+        font-weight: 750 !important;
     }
 
     .modelo-input {
         min-width: 80px;
+        background: #fff7ed !important;
+        border-color: #fed7aa !important;
     }
 
     .grupo-header {
-        background: #343a40;
-        color: white;
-        font-weight: bold;
+        background: linear-gradient(135deg, #7c2d12, #f97316) !important;
+        color: white !important;
+        font-weight: 950;
     }
 
     .subtramite-box {
-        border-left: 5px solid #0d6efd;
-        background: #eef5ff;
+        border-left: 5px solid #f97316;
+        background: linear-gradient(135deg, #fff7ed, #ffffff);
         padding: 12px 15px;
-        border-radius: 8px;
-        margin-bottom: 15px;
+        border-radius: 17px;
+        margin-bottom: 12px;
+        box-shadow: 0 10px 24px rgba(15,23,42,.06);
+        border-top: 1px solid #fed7aa;
+        border-right: 1px solid #fed7aa;
+        border-bottom: 1px solid #fed7aa;
     }
 
     .subtramite-badge {
-        font-size: 0.9rem;
-        padding: 6px 10px;
-        border-radius: 20px;
+        font-size: 0.82rem;
+        padding: 7px 11px;
+        border-radius: 999px;
+        font-weight: 950;
+        background: linear-gradient(135deg, #facc15, #f97316) !important;
+        color: #111827 !important;
+    }
+
+    .form-action-bar {
+        position: sticky;
+        bottom: 10px;
+        z-index: 12;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        padding: 10px;
+        border: 1px solid rgba(226,232,240,.86);
+        border-radius: 18px;
+        background: rgba(255,255,255,.88);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 15px 38px rgba(15,23,42,.12);
+    }
+
+    .form-action-bar .btn {
+        min-height: 40px;
+    }
+
+    @@media (max-width: 767.98px) {
+        .form-hero-mini {
+            border-radius: 18px;
+            padding: 14px;
+        }
+
+        .table-responsive {
+            max-height: none;
+        }
+
+        .form-action-bar {
+            position: static;
+        }
+
+        .form-action-bar .btn {
+            width: 100%;
+        }
     }
 </style>
 
-<div class="container-fluid mt-3">
 
-    <h4>@tituloFormulario</h4>
+<div class="container-fluid mt-3 embarque-form-page">
+
+    <div class="form-hero-mini">
+        <h4>@tituloFormulario</h4>
+        <p>Formulario ancho para trabajar con todos los campos del embarque sin perder espacio.</p>
+    </div>
 
     @if (esSubtramite)
     {
@@ -193,7 +337,8 @@
 
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-        <div class="table-responsive">
+        <div class="form-table-card">
+            <div class="table-responsive">
             <table class="table table-bordered table-sm" id="tabla">
                 <thead>
                     <tr class="table-dark text-center" id="headerTipos">
@@ -294,18 +439,36 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-primary mt-3" @(soloLectura ? "disabled" : null)>
-            @(esEdicion ? "Actualizar" : "Guardar")
-        </button>
-
-        @if (esEdicion)
-        {
-            <button type="button" class="btn btn-dark mt-3 ms-2" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
-                📊 Auditoría
+        <div class="form-action-bar">
+            <div class="d-flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary" @(soloLectura ? "disabled" : null)>
+                @(esEdicion ? "Actualizar" : "Guardar")
             </button>
-        }
+
+            @if (esEdicion && esSubtramite)
+            {
+                <a asp-controller="PackingLists"
+                   asp-action="PorSubtramite"
+                   asp-route-subtramiteId="@Model.Id"
+                   class="btn btn-success">
+                    📦 Packing List
+                </a>
+            }
+
+            @if (esEdicion)
+            {
+                <button type="button" class="btn btn-dark" data-bs-toggle="modal" data-bs-target="#modalAuditoria">
+                    📊 Auditoría
+                </button>
+            }
+            </div>
+            <a asp-action="Dashboard" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al panel
+            </a>
+        </div>
     </form>
 </div>
 

@@ -1,0 +1,271 @@
+﻿@model Seguimiento.Models.ViewModels.PackingListDetallePageViewModel
+
+@{
+    ViewData["Title"] = "Editar Línea Packing";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h2 class="fw-bold mb-1">Editar Línea de Packing</h2>
+            <p class="text-muted mb-0">
+                Subtrámite: <strong>@Model.SubtramiteTitulo</strong>
+            </p>
+        </div>
+
+        <div>
+            <a asp-action="PorSubtramite" asp-route-subtramiteId="@Model.SubtramiteId" class="btn btn-outline-secondary">
+                ← Volver al Packing
+            </a>
+        </div>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            <strong>Revisa los campos marcados.</strong>
+        </div>
+    }
+
+    @if (ViewBag.ErroresDebug != null)
+    {
+        <div class="alert alert-warning">
+            <strong>Errores detectados:</strong>
+            <ul class="mb-0 mt-2">
+                @foreach (var err in (List<string>)ViewBag.ErroresDebug)
+                {
+                    <li>@err</li>
+                }
+            </ul>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-white fw-bold">
+            Editar Línea
+        </div>
+        <div class="card-body">
+            <form asp-action="EditarDetalle" method="post">
+                @Html.AntiForgeryToken()
+
+                <input asp-for="NuevoDetalle.Id" type="hidden" />
+                <input asp-for="NuevoDetalle.PackingListId" type="hidden" />
+                <input asp-for="SubtramiteId" type="hidden" />
+                <input asp-for="SubtramiteTitulo" type="hidden" />
+
+                <div asp-validation-summary="All" class="alert alert-danger mb-3"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.OriginPort" class="form-label fw-semibold">Origin Port</label>
+                        <input asp-for="NuevoDetalle.OriginPort" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.OriginPort" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.DestinationPort" class="form-label fw-semibold">Destination Port</label>
+                        <input asp-for="NuevoDetalle.DestinationPort" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.DestinationPort" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.Ship" class="form-label fw-semibold">Ship</label>
+                        <input asp-for="NuevoDetalle.Ship" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Ship" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.InvoiceNumber" class="form-label fw-semibold">Invoice Number</label>
+                        <input asp-for="NuevoDetalle.InvoiceNumber" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.InvoiceNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.BL" class="form-label fw-semibold">B/L</label>
+                        <input asp-for="NuevoDetalle.BL" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.BL" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.VinNo" class="form-label fw-semibold text-danger">VIN No.</label>
+                        <input asp-for="NuevoDetalle.VinNo" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.VinNo" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModeloId" class="form-label fw-semibold">Modelo</label>
+                        <select asp-for="NuevoDetalle.ModeloId" id="ModeloId" class="form-select">
+                            <option value="">Seleccione modelo</option>
+                            @foreach (var item in Model.Modelos)
+                            {
+                                <option value="@item.Id"
+                                        data-modelpacking="@item.ModelPacking"
+                                        data-modelsri="@item.ModelSRI"
+                                        data-modelhomologacion="@item.ModelHomologacion">
+                                    @item.Nombre
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="NuevoDetalle.ModeloId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelPacking" class="form-label fw-semibold">Model</label>
+                        <input asp-for="NuevoDetalle.ModelPacking" id="ModelPacking" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelPacking" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelSRI" class="form-label fw-semibold">Model (SRI)</label>
+                        <input asp-for="NuevoDetalle.ModelSRI" id="ModelSRI" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelSRI" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ModelHomologacion" class="form-label fw-semibold">Model (HOMOLOGACIÓN)</label>
+                        <input asp-for="NuevoDetalle.ModelHomologacion" id="ModelHomologacion" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ModelHomologacion" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.EngineCode" class="form-label fw-semibold">Engine Code</label>
+                        <input asp-for="NuevoDetalle.EngineCode" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.EngineCode" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.EngineNumber" class="form-label fw-semibold text-danger">Engine Number</label>
+                        <input asp-for="NuevoDetalle.EngineNumber" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.EngineNumber" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorId" class="form-label fw-semibold">Color</label>
+                        <select asp-for="NuevoDetalle.ColorId" id="ColorId" class="form-select">
+                            <option value="">Seleccione color</option>
+                            @foreach (var item in Model.Colores)
+                            {
+                                <option value="@item.Id"
+                                        data-codigo="@item.Codigo"
+                                        data-nombre="@item.Nombre"
+                                        data-nombrelocal="@item.NombreLocal">
+                                    @item.Codigo - @item.Nombre
+                                </option>
+                            }
+                        </select>
+                        <span asp-validation-for="NuevoDetalle.ColorId" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorCodigo" class="form-label fw-semibold">Color Código</label>
+                        <input asp-for="NuevoDetalle.ColorCodigo" id="ColorCodigo" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorCodigo" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorName" class="form-label fw-semibold">Color Name</label>
+                        <input asp-for="NuevoDetalle.ColorName" id="ColorName" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorName" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.ColorLocal" class="form-label fw-semibold">Color Local</label>
+                        <input asp-for="NuevoDetalle.ColorLocal" id="ColorLocal" class="form-control" readonly />
+                        <span asp-validation-for="NuevoDetalle.ColorLocal" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.ModelYear" class="form-label fw-semibold">Model Year</label>
+                        <input asp-for="NuevoDetalle.ModelYear" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.ModelYear" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.NetWeightKg" class="form-label fw-semibold">Net Weight (KGs)</label>
+                        <input asp-for="NuevoDetalle.NetWeightKg" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.NetWeightKg" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.CBM" class="form-label fw-semibold">CBM</label>
+                        <input asp-for="NuevoDetalle.CBM" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.CBM" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Precio" class="form-label fw-semibold">Precio</label>
+                        <input asp-for="NuevoDetalle.Precio" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Precio" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Flete" class="form-label fw-semibold">Flete</label>
+                        <input asp-for="NuevoDetalle.Flete" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Flete" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label asp-for="NuevoDetalle.Seguro" class="form-label fw-semibold">Seguro</label>
+                        <input asp-for="NuevoDetalle.Seguro" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Seguro" class="text-danger"></span>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label asp-for="NuevoDetalle.Incoterm" class="form-label fw-semibold">Incoterm</label>
+                        <input asp-for="NuevoDetalle.Incoterm" class="form-control" />
+                        <span asp-validation-for="NuevoDetalle.Incoterm" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <hr class="my-4" />
+
+                <div class="d-flex flex-wrap gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        Guardar Cambios
+                    </button>
+
+                    <a asp-action="PorSubtramite" asp-route-subtramiteId="@Model.SubtramiteId" class="btn btn-outline-secondary">
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const modeloSelect = document.getElementById("ModeloId");
+            const colorSelect = document.getElementById("ColorId");
+
+            function actualizarModelo() {
+                const selected = modeloSelect.options[modeloSelect.selectedIndex];
+                document.getElementById("ModelPacking").value = selected.getAttribute("data-modelpacking") || "";
+                document.getElementById("ModelSRI").value = selected.getAttribute("data-modelsri") || "";
+                document.getElementById("ModelHomologacion").value = selected.getAttribute("data-modelhomologacion") || "";
+            }
+
+            function actualizarColor() {
+                const selected = colorSelect.options[colorSelect.selectedIndex];
+                document.getElementById("ColorCodigo").value = selected.getAttribute("data-codigo") || "";
+                document.getElementById("ColorName").value = selected.getAttribute("data-nombre") || "";
+                document.getElementById("ColorLocal").value = selected.getAttribute("data-nombrelocal") || "";
+            }
+
+            if (modeloSelect) {
+                modeloSelect.addEventListener("change", actualizarModelo);
+                actualizarModelo();
+            }
+
+            if (colorSelect) {
+                colorSelect.addEventListener("change", actualizarColor);
+                actualizarColor();
+            }
+        });
+    </script>
+}

@@ -27,6 +27,7 @@
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
+            position: relative;
         }
 
             /* capa oscura para que el login resalte */
@@ -38,6 +39,7 @@
                 width: 100%;
                 height: 100%;
                 background: rgba(0,0,0,0.35);
+                z-index: 1;
             }
 
         .login-container {
@@ -83,6 +85,33 @@
             margin-top: 20px;
         }
 
+        .modal-content {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            background: #f05a28;
+            color: white;
+            border-bottom: none;
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+        }
+
+        .modal-title {
+            font-weight: 700;
+        }
+
+        .btn-close {
+            filter: brightness(0) invert(1);
+        }
+
+        .licencia-fecha {
+            font-weight: 700;
+            color: #f05a28;
+        }
+
     </style>
 
 </head>
@@ -98,6 +127,7 @@
         <div class="system-title">
             Sistema de Seguimiento de Embarques
         </div>
+
         @if (ViewBag.Error != null)
         {
             <div class="alert alert-danger text-center fw-bold">
@@ -128,10 +158,50 @@
         </form>
 
         <div class="footer">
-            Lozano Asesores © 2026    By moraleSoftware
+            Lozano Asesores © 2026 &nbsp;&nbsp; By moraleSoftware
         </div>
 
     </div>
+
+    <!-- Modal aviso licencia -->
+    <div class="modal fade" id="modalLicencia" tabindex="-1" aria-labelledby="modalLicenciaLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalLicenciaLabel">Aviso de licencia</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <div class="modal-body text-center py-4">
+                    <h5 class="mb-3">Estimado usuario</h5>
+                    <p class="mb-2">
+                        Le informamos que la licencia del sistema
+                        <strong>expira el próximo <span class="licencia-fecha">30 de abril de 2026</span></strong>.
+                    </p>
+                    <p class="mb-0 text-muted">
+                        Por favor, tome las acciones necesarias para su renovación y evitar interrupciones en el servicio.
+                    </p>
+                </div>
+
+                <div class="modal-footer justify-content-center border-0 pb-4">
+                    <button type="button" class="btn btn-login text-white px-4" data-bs-dismiss="modal">
+                        Entendido
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        window.addEventListener('load', function () {
+            var modalLicencia = new bootstrap.Modal(document.getElementById('modalLicencia'));
+            modalLicencia.show();
+        });
+    </script>
 
 </body>
 </html>

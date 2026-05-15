@@ -5,9 +5,8 @@
 }
 
 <style>
-
     .edit-container {
-        max-width: 650px;
+        max-width: 800px;
         margin: auto;
     }
 
@@ -40,6 +39,7 @@
         margin-top: 25px;
         display: flex;
         gap: 10px;
+        flex-wrap: wrap;
     }
 
     .btn-lozano {
@@ -53,17 +53,14 @@
             background: #d84c1b;
             color: white;
         }
-
 </style>
 
 <div class="container mt-4 edit-container">
 
     <div class="card-edit">
-
         <h3 class="title-edit">✏️ Editar Modelo</h3>
 
         <form asp-action="Edit" method="post">
-
             @Html.AntiForgeryToken()
 
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -74,52 +71,60 @@
                 Información del Modelo
             </div>
 
-            <!-- MARCA -->
-            <div class="mb-3">
-                <label asp-for="MarcaId" class="form-label">Marca</label>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="MarcaId" class="form-label">Marca</label>
+                    <select asp-for="MarcaId" class="form-control" asp-items="ViewBag.MarcaId">
+                        <option value="">Seleccione una marca</option>
+                    </select>
+                    <span asp-validation-for="MarcaId" class="text-danger"></span>
+                </div>
 
-                <select asp-for="MarcaId"
-                        class="form-control"
-                        asp-items="ViewBag.MarcaId">
-                    <option value="">Seleccione una marca</option>
-                </select>
-
-                <span asp-validation-for="MarcaId" class="text-danger"></span>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tipo de Modelo</label>
+                    <select asp-for="TipoModeloId" class="form-control" asp-items="ViewBag.TipoModeloId">
+                        <option value="">-- Seleccione Tipo --</option>
+                    </select>
+                    <span asp-validation-for="TipoModeloId" class="text-danger"></span>
+                </div>
             </div>
 
-            <!-- 🔥 TIPO MODELO (CORREGIDO) -->
-            <div class="mb-3">
-                <label class="form-label">Tipo de Modelo</label>
-
-                <select asp-for="TipoModeloId"
-                        class="form-control"
-                        asp-items="ViewBag.TipoModeloId">
-
-                    <option value="">-- Seleccione Tipo --</option>
-
-                </select>
-
-                <span asp-validation-for="TipoModeloId" class="text-danger"></span>
-            </div>
-
-            <!-- NOMBRE -->
             <div class="mb-3">
                 <label asp-for="Nombre" class="form-label">Nombre del Modelo</label>
-
                 <input asp-for="Nombre" class="form-control" />
-
                 <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
 
-            <!-- ACTIVO -->
+            <hr />
+
+            <div class="section-title">
+                Datos para Packing List
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelPacking" class="form-label"></label>
+                <input asp-for="ModelPacking" class="form-control" />
+                <span asp-validation-for="ModelPacking" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelSRI" class="form-label"></label>
+                <input asp-for="ModelSRI" class="form-control" />
+                <span asp-validation-for="ModelSRI" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ModelHomologacion" class="form-label"></label>
+                <input asp-for="ModelHomologacion" class="form-control" />
+                <span asp-validation-for="ModelHomologacion" class="text-danger"></span>
+            </div>
+
             <div class="form-check mt-3">
                 <input asp-for="Activo" class="form-check-input" />
                 <label asp-for="Activo" class="form-check-label">Activo</label>
             </div>
 
-            <!-- BOTONES -->
             <div class="btn-actions">
-
                 <button type="submit" class="btn btn-lozano">
                     💾 Guardar Cambios
                 </button>
@@ -127,13 +132,9 @@
                 <a asp-action="Index" class="btn btn-outline-secondary">
                     Cancelar
                 </a>
-
             </div>
-
         </form>
-
     </div>
-
 </div>
 
 @section Scripts {

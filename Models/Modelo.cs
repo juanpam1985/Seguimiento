@@ -14,15 +14,25 @@ namespace Seguimiento.Models
         [Required(ErrorMessage = "El nombre es obligatorio")]
         public string Nombre { get; set; }
 
+        [StringLength(150)]
+        [Display(Name = "Model")]
+        public string ModelPacking { get; set; }
+
+        [StringLength(150)]
+        [Display(Name = "Model (SRI)")]
+        public string ModelSRI { get; set; }
+
+        [StringLength(150)]
+        [Display(Name = "Model (HOMOLOGACIÓN)")]
+        public string ModelHomologacion { get; set; }
+
         public bool Activo { get; set; }
 
-        // 🔥 navegación sin validación
         [ValidateNever]
         public Marca Marca { get; set; }
 
-        // 🔥 AQUÍ ESTÁ LA CLAVE
         [Required(ErrorMessage = "Debe seleccionar un tipo de modelo")]
-        public int TipoModeloId { get; set; } // ❗ QUITAMOS EL ?
+        public int TipoModeloId { get; set; }
 
         [ValidateNever]
         public TipoModelo TipoModelo { get; set; }

@@ -65,6 +65,14 @@ namespace Seguimiento.Controllers
             return status == "closed" || status == "cerrado" || status == "entregado";
         }
 
+        private static bool ContieneTexto(string origen, string buscado)
+        {
+            if (string.IsNullOrWhiteSpace(origen) || string.IsNullOrWhiteSpace(buscado))
+                return false;
+
+            return origen.Trim().ToLower().Contains(buscado.Trim().ToLower());
+        }
+
         private Dictionary<string, string> ObtenerRespuestasPadrePrecargadas(int embarquePadreId)
         {
             var respuestasPadre = _context.Respuestas
@@ -245,7 +253,7 @@ namespace Seguimiento.Controllers
         // =========================
         // DASHBOARD
         // =========================
-        public async Task<IActionResult> Dashboard(string filtro, int? marcaId)
+        public async Task<IActionResult> Dashboard(string filtro, int? marcaId, string q)
         {
             if (!Puede("VER"))
                 return RedirectToAction("Login", "Account");
@@ -261,6 +269,8 @@ namespace Seguimiento.Controllers
 
             ViewBag.NombreEmpresa = empresa?.Nombre;
             ViewBag.MarcaId = marcaId;
+            ViewBag.Filtro = filtro;
+            ViewBag.Q = q;
 
             var embarques = await _context.Embarques
                 .Include(x => x.Empresa)
@@ -342,6 +352,167 @@ namespace Seguimiento.Controllers
             {
                 embarques = embarques
                     .Where(e => GetMarcaId(e) == marcaId.Value)
+                    .ToList();
+            }
+
+            // ==========================================
+            // BÚSQUEDA GLOBAL
+            // ==========================================
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var palabras = q.Trim()
+                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(p => p.Trim().ToLower())
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .ToList();
+
+                var subtramitesEmpresaIds = embarques
+                    .Where(e => e.EsSubtramite)
+                    .Select(e => e.Id)
+                    .ToList();
+
+                var packings = await _context.PackingLists
+                    .Include(p => p.Detalles)
+                    .Where(p => p.Activo && subtramitesEmpresaIds.Contains(p.SubtramiteId))
+                    .ToListAsync();
+
+                bool CoincideEmbarque(Embarque e, string palabra)
+                {
+                    if (e.Empresa != null && ContieneTexto(e.Empresa.Nombre, palabra))
+                        return true;
+
+                    if (ContieneTexto(e.CreadoPor, palabra) ||
+                        ContieneTexto(e.ModificadoPor, palabra))
+                        return true;
+
+                    var respuestas = e.Respuestas?.ToList() ?? new List<Respuesta>();
+
+                    foreach (var r in respuestas)
+                    {
+                        if (r.Pregunta != null && ContieneTexto(r.Pregunta.Nombre, palabra))
+                            return true;
+
+                        if (ContieneTexto(r.Valor, palabra))
+                            return true;
+                    }
+
+                    return false;
+                }
+
+                bool CoincidePacking(PackingList p, string palabra)
+                {
+                    if (ContieneTexto(p.RequestNo, palabra))
+                        return true;
+
+                    if (p.FechaEmbarque.HasValue && p.FechaEmbarque.Value.ToString("dd/MM/yyyy").Contains(palabra))
+                        return true;
+
+                    if (p.FechaArribo.HasValue && p.FechaArribo.Value.ToString("dd/MM/yyyy").Contains(palabra))
+                        return true;
+
+                    var detalles = p.Detalles ?? new List<PackingListDetalle>();
+
+                    foreach (var d in detalles)
+                    {
+                        if (
+                            ContieneTexto(d.OriginPort, palabra) ||
+                            ContieneTexto(d.DestinationPort, palabra) ||
+                            ContieneTexto(d.Ship, palabra) ||
+                            ContieneTexto(d.InvoiceNumber, palabra) ||
+                            ContieneTexto(d.BL, palabra) ||
+                            ContieneTexto(d.VinNo, palabra) ||
+                            ContieneTexto(d.ModelPacking, palabra) ||
+                            ContieneTexto(d.ModelSRI, palabra) ||
+                            ContieneTexto(d.ModelHomologacion, palabra) ||
+                            ContieneTexto(d.EngineCode, palabra) ||
+                            ContieneTexto(d.EngineNumber, palabra) ||
+                            ContieneTexto(d.ColorCodigo, palabra) ||
+                            ContieneTexto(d.ColorName, palabra) ||
+                            ContieneTexto(d.ColorLocal, palabra) ||
+                            ContieneTexto(d.ModelYear, palabra) ||
+                            ContieneTexto(d.Incoterm, palabra) ||
+                            d.Linea.ToString().Contains(palabra)
+                        )
+                        {
+                            return true;
+                        }
+
+                        if (d.NetWeightKg.HasValue && d.NetWeightKg.Value.ToString().Contains(palabra))
+                            return true;
+
+                        if (d.CBM.HasValue && d.CBM.Value.ToString().Contains(palabra))
+                            return true;
+
+                        if (d.Precio.HasValue && d.Precio.Value.ToString().Contains(palabra))
+                            return true;
+
+                        if (d.Flete.HasValue && d.Flete.Value.ToString().Contains(palabra))
+                            return true;
+
+                        if (d.Seguro.HasValue && d.Seguro.Value.ToString().Contains(palabra))
+                            return true;
+                    }
+
+                    return false;
+                }
+
+                bool CoincideTodo(Embarque e)
+                {
+                    foreach (var palabra in palabras)
+                    {
+                        var coincideDirecto = CoincideEmbarque(e, palabra);
+
+                        var coincidePacking = packings.Any(p =>
+                            p.SubtramiteId == e.Id && CoincidePacking(p, palabra));
+
+                        if (!(coincideDirecto || coincidePacking))
+                            return false;
+                    }
+
+                    return true;
+                }
+
+                var embarquesCoincidentes = embarques
+                    .Where(e => CoincideTodo(e))
+                    .ToList();
+
+                var idsPrincipales = new HashSet<int>();
+                var idsSubtramites = new HashSet<int>();
+
+                foreach (var e in embarquesCoincidentes)
+                {
+                    if (e.EsSubtramite)
+                    {
+                        idsSubtramites.Add(e.Id);
+
+                        if (e.EmbarquePadreId.HasValue)
+                            idsPrincipales.Add(e.EmbarquePadreId.Value);
+                    }
+                    else
+                    {
+                        idsPrincipales.Add(e.Id);
+                    }
+                }
+
+                var subtramitesConPacking = packings
+                    .Where(p => palabras.All(pal => CoincidePacking(p, pal)))
+                    .Select(p => p.SubtramiteId)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var subId in subtramitesConPacking)
+                {
+                    idsSubtramites.Add(subId);
+
+                    var sub = embarques.FirstOrDefault(x => x.Id == subId);
+                    if (sub?.EmbarquePadreId != null)
+                        idsPrincipales.Add(sub.EmbarquePadreId.Value);
+                }
+
+                embarques = embarques
+                    .Where(e =>
+                        (!e.EsSubtramite && idsPrincipales.Contains(e.Id)) ||
+                        (e.EsSubtramite && idsSubtramites.Contains(e.Id)))
                     .ToList();
             }
 
@@ -432,7 +603,7 @@ namespace Seguimiento.Controllers
             ViewBag.Cerrados = cerrados;
             ViewBag.Abiertos = abiertos;
 
-            return View(listaOrdenada);
+            return View("~/Views/Embarques/Dashboard.cshtml", listaOrdenada);
         }
 
         // =========================

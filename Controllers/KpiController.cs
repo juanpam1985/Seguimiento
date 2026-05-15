@@ -77,12 +77,14 @@ public class KPIController : Controller
 
         var lista = await query.ToListAsync();
 
-        var marcasDb = await _context.Marcas
+        // SOLO marcas asignadas a la empresa
+        var marcasEmpresa = await _context.Marcas
             .AsNoTracking()
+            .Where(m => m.Activo && m.MarcaEmpresas.Any(me => me.EmpresaId == empresaId.Value))
             .OrderBy(m => m.Nombre)
             .ToListAsync();
 
-        ViewBag.MarcasCombo = marcasDb;
+        ViewBag.MarcasCombo = marcasEmpresa;
 
         int total = 0;
         int retrasados = 0;
@@ -161,7 +163,7 @@ public class KPIController : Controller
 
             if (int.TryParse(marcaIdTexto, out int marcaId))
             {
-                marca = marcasDb.FirstOrDefault(m => m.Id == marcaId)?.Nombre ?? "SIN MARCA";
+                marca = marcasEmpresa.FirstOrDefault(m => m.Id == marcaId)?.Nombre ?? "SIN MARCA";
             }
 
             detalle.Add(new DetalleKPI
@@ -222,6 +224,7 @@ public class KPIController : Controller
             : 0;
 
         var ranking = marcas
+            .Where(m => m.Key != "SIN MARCA")
             .Select(m => new
             {
                 Marca = m.Key,

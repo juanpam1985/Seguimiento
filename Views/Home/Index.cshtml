@@ -1,8 +1,97 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="page-hero">
+    <div class="row align-items-center g-3">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div style="width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#facc15,#f97316);display:flex;align-items:center;justify-content:center;color:#111827;font-size:1.8rem;box-shadow:0 18px 38px rgba(249,115,22,.28);">
+                    <i class="bi bi-command"></i>
+                </div>
+                <div>
+                    <h1 class="mb-1 fw-black" style="font-weight:950;letter-spacing:-.7px;">Centro Operativo de Embarques</h1>
+                    <p class="mb-0 text-muted" style="font-weight:700;">Control, trazabilidad y lectura gerencial en una sola pantalla.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            <a asp-controller="Embarques" asp-action="Dashboard" class="btn btn-primary btn-lg me-2 mb-2">
+                <i class="bi bi-truck-front-fill"></i> Ver Embarques
+            </a>
+            <a asp-controller="KPI" asp-action="Index" class="btn btn-outline-light btn-lg mb-2" style="border-radius:13px;font-weight:900;">
+                <i class="bi bi-graph-up-arrow"></i> KPI
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card h-100 p-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="text-muted fw-bold small text-uppercase">Operación</div>
+                    <h4 class="fw-bold mt-2 mb-2">Embarques</h4>
+                    <p class="text-muted mb-3">Panel amplio para revisar trámites, estados, atrasos, subtrámites y acciones.</p>
+                </div>
+                <i class="bi bi-truck-front-fill" style="font-size:2rem;color:#f97316;"></i>
+            </div>
+            <a asp-controller="Embarques" asp-action="Dashboard" class="btn btn-primary w-100">Abrir panel</a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card h-100 p-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="text-muted fw-bold small text-uppercase">Gerencia</div>
+                    <h4 class="fw-bold mt-2 mb-2">KPI</h4>
+                    <p class="text-muted mb-3">Indicadores para medir cumplimiento, retrasos y desempeño por periodo.</p>
+                </div>
+                <i class="bi bi-graph-up-arrow" style="font-size:2rem;color:#2563eb;"></i>
+            </div>
+            <a asp-controller="KPI" asp-action="Index" class="btn btn-dark w-100">Ver indicadores</a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card h-100 p-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="text-muted fw-bold small text-uppercase">Consulta</div>
+                    <h4 class="fw-bold mt-2 mb-2">Búsqueda Global</h4>
+                    <p class="text-muted mb-3">Encuentra registros por shipment, factura, DAI, marca o cualquier dato clave.</p>
+                </div>
+                <i class="bi bi-search" style="font-size:2rem;color:#16a34a;"></i>
+            </div>
+            <a asp-controller="Busqueda" asp-action="Index" class="btn btn-success w-100">Buscar</a>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="glass-card h-100 p-4">
+            <div class="d-flex justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="text-muted fw-bold small text-uppercase">Configuración</div>
+                    <h4 class="fw-bold mt-2 mb-2">Mantenimiento</h4>
+                    <p class="text-muted mb-3">Administra marcas, modelos, colores, preguntas y opciones del sistema.</p>
+                </div>
+                <i class="bi bi-tools" style="font-size:2rem;color:#64748b;"></i>
+            </div>
+            <a asp-controller="Marcas" asp-action="Index" class="btn btn-secondary w-100">Ir a mantenimiento</a>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card mt-3 p-4">
+    <div class="row align-items-center g-3">
+        <div class="col-lg-9">
+            <h4 class="fw-bold mb-1">Diseñado para trabajar ancho, rápido y sin estorbar la información.</h4>
+            <p class="text-muted mb-0">El espacio principal queda libre para tablas grandes de embarques. Nada de menú lateral quitando oxígeno a los datos.</p>
+        </div>
+        <div class="col-lg-3 text-lg-end">
+            <span class="badge bg-dark p-3"><i class="bi bi-display"></i> Vista amplia</span>
+        </div>
+    </div>
 </div>
